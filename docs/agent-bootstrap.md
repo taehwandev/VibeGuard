@@ -1,19 +1,19 @@
 # Agent Bootstrap
 
-This document is for AI coding agents that receive a link to Vibe-Guard from a
+This document is for AI coding agents that receive a link to VibeGuard from a
 user.
 
-The user should not need to understand Vibe-Guard, npm, agent rules, secret
+The user should not need to understand VibeGuard, npm, agent rules, secret
 scanning, or project policy files. Treat the link as an instruction to install
 and apply the safety workflow to the user's current project.
 
 ## Goal
 
-Install or refresh Vibe-Guard in the current target project, run the safe checks,
+Install or refresh VibeGuard in the current target project, run the safe checks,
 auto-fix low-risk issues, and then continue with the user's original coding
 request.
 
-Vibe-Guard is only the guardrail layer. Applying it must not clone, vendor,
+VibeGuard is only the guardrail layer. Applying it must not clone, vendor,
 install, or link external playbooks or rule libraries unless the user explicitly
 asks for that separate setup.
 
@@ -24,23 +24,39 @@ asks for that separate setup.
 2. Run setup from the GitHub package:
 
    ```bash
-   npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard setup .
+   npx --yes vibeguard setup .
    ```
 
 3. Run the safety fixer:
 
    ```bash
-   npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard audit . --fix
+   npx --yes vibeguard audit . --fix
    ```
 
 4. Run the safety audit again:
 
    ```bash
-   npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard audit .
+   npx --yes vibeguard audit .
    ```
 
 5. Continue with the user's original coding request only after safe fixes are
    applied.
+
+Setup installs local `pre-commit` and `pre-push` hooks when the target project
+is a Git repository. The commit hook runs `vibeguard audit .`; the push hook
+runs `vibeguard audit . --strict`.
+
+When an agent hook adapter is available, record execution evidence and summarize
+it with `vibeguard evidence .` before final reporting. Do not claim that tests,
+audits, builds, or typechecks ran unless they appear in the execution evidence
+or in the current terminal history.
+
+For Claude Code, install the local evidence adapter when the user or project
+allows tool hooks:
+
+```bash
+vibeguard evidence install-claude-hook .
+```
 
 Audit exits with code `2` when blocked. With `--strict`, warnings exit with code
 `1`. Treat non-zero audit exits as a stop signal unless the user explicitly
@@ -51,8 +67,18 @@ approves the next risky step.
 - Never print detected secret values.
 - Keep real secrets in ignored local env files only.
 - Keep `.env.example` value-free.
+- Keep provider keys, database URLs, service-role keys, signing secrets, and
+  webhook secrets server-side only.
 - Ask before deleting data, running migrations, deploying to production,
   increasing paid API/model usage, or changing credentials.
+- Use cost-aware architecture. Before adding a paid service, database, queue,
+  background worker, model call, analytics SDK, or cloud resource, check whether
+  existing code, a local/static path, server-side reuse, caching, batching, or
+  rate limits solve the request with less recurring cost.
+- For web apps, centralize repeated API/model calls, paid provider access, and
+  SDK setup behind shared server-side helpers or endpoints. Prefer server-side
+  caching for stable or slow-changing data, and add batching/rate limits before
+  creating new client-side call paths.
 - If Node.js or npm is unavailable, explain the blocker in plain language and
   do not ask the user to debug package-manager details.
 - Preserve existing repo-local agent instructions. Only update the managed
@@ -61,12 +87,16 @@ approves the next risky step.
   documents into the target project.
 - Do not auto-fix destructive, architectural, deployment, billing, data, or
   credential decisions.
+- Do not add recurring infrastructure or paid dependencies just because they are
+  convenient. Ask for approval and describe the cheaper alternative first.
+- Do not duplicate paid calls or provider setup across UI components. Commonize
+  the access path first, then add caching or throttling where useful.
 
 ## User-Facing Summary
 
-After applying Vibe-Guard, summarize only:
+After applying VibeGuard, summarize only:
 
-- whether Vibe-Guard was installed or updated,
+- whether VibeGuard was installed or updated,
 - what safe fixes were applied,
 - what risks remain,
 - what tests or checks were run.

@@ -2,14 +2,16 @@
 
 ## Positioning
 
-Vibe-Guard is an AI coding safety layer for non-developers.
+VibeGuard is an AI coding safety layer for non-developers.
 
 It should not behave like a lecture. It should:
 
 1. inspect the project,
 2. fix safe issues automatically,
 3. block dangerous work,
-4. install persistent agent instructions so the user does not need to write a
+4. push the agent toward cost-aware architecture before it adds paid services or
+   recurring infrastructure,
+5. install persistent agent instructions so the user does not need to write a
    careful safety prompt every time.
 
 It should stay a guard. It must not become an installer or router for external
@@ -18,15 +20,15 @@ playbooks by default.
 ## First Useful User Flow
 
 ```text
-User gives the Vibe-Guard GitHub link to an AI coding agent
+User gives the VibeGuard GitHub link to an AI coding agent
 -> Agent reads the repo bootstrap instructions
 -> Agent runs setup in the user's current project
--> Vibe-Guard installs project policy and managed agent instructions
+-> VibeGuard installs project policy and managed agent instructions
 -> User types a normal request
--> Agent runs Vibe-Guard before editing
--> Vibe-Guard fixes safe setup gaps
+-> Agent runs VibeGuard before editing
+-> VibeGuard fixes safe setup gaps
 -> Agent implements with guardrails
--> Agent runs Vibe-Guard again before finishing
+-> Agent runs VibeGuard again before finishing
 ```
 
 ## Install And Update Model
@@ -34,13 +36,14 @@ User gives the Vibe-Guard GitHub link to an AI coding agent
 The default product behavior should be "install once, then stay out of the
 user's way."
 
-- `vibe-guard setup .` installs the project policy, config, env protection, and
+- `vibeguard setup .` installs the project policy, config, env protection, and
   managed `AGENTS.md` block.
-- `vibe-guard update .` reruns the same idempotent setup path and refreshes only
-  the Vibe-Guard managed block.
-- Before npm publishing, agents should run directly from the repository link with
-  `npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard ...`.
-- After npm publishing, agents should prefer the latest published package form.
+- `vibeguard update .` reruns the same idempotent setup path and refreshes only
+  the VibeGuard managed block.
+- Agents should prefer the published npm package form:
+  `npx --yes vibeguard ...`.
+- The GitHub repository link remains the human-friendly instruction anchor, but
+  the agent should use npm once the package is available.
   That keeps the tool current without requiring the user to understand global
   installs.
 - `prompt` remains available for manual use and future integrations, but it is
@@ -48,7 +51,7 @@ user's way."
 - Agent-facing documents should stay in English. CLI output, generated prompts,
   and distribution pages can be localized with explicit language selection; see
   `docs/localization.md`.
-- External playbooks or rule libraries are separate products. Vibe-Guard may
+- External playbooks or rule libraries are separate products. VibeGuard may
   read an explicitly configured rule source, but setup should not clone, vendor,
   install, or link one by default.
 
@@ -60,10 +63,31 @@ The user should be able to paste only this link into an AI coding agent:
 https://github.com/taehwandev/VibeGuard
 ```
 
-The agent should infer that it needs to install or refresh Vibe-Guard in the
+The agent should infer that it needs to install or refresh VibeGuard in the
 current project, run the safety workflow, and continue the user's original task.
 
 ## MVP Principle
 
 Prefer deterministic checks over expensive AI judgment. Add model-based judgment
 later as an optional layer for ambiguous architecture or product-risk decisions.
+
+## Cost-Aware Architecture Principle
+
+VibeGuard should not encourage agents to solve every request by attaching more
+services. Before an agent adds a paid API, model call, analytics SDK, database,
+queue, background worker, scheduled job, storage bucket, or cloud resource, it
+should first consider existing code, static/local behavior, server-side reuse,
+caching, batching, rate limits, and clear budget boundaries.
+
+If a recurring cost or operational burden is introduced, the agent should explain
+why the simpler path is insufficient and ask for approval before implementation.
+
+For typical web projects, the default recommendation should be:
+
+- commonize repeated API/model/provider access behind shared server-side helpers
+  or endpoints,
+- keep provider SDK setup and privileged calls server-side,
+- cache stable or slow-changing data on the server,
+- batch repeated requests and add rate limits before exposing expensive paths,
+- avoid duplicating client-side fetching logic across components when one shared
+  access path is enough.

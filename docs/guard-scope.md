@@ -1,6 +1,6 @@
 # Guard Scope
 
-Vibe-Guard is a guard, not a playbook installer.
+VibeGuard is a guard, not a playbook installer.
 
 Its job is to reduce avoidable damage before an AI coding agent changes a
 project. It should inspect local state, apply narrow safe fixes, and stop risky
@@ -15,8 +15,18 @@ work for approval.
 - Detect likely hard-coded secrets without printing the values.
 - Quarantine simple hard-coded JS/TS/Python secret assignments when `--fix` is
   requested.
+- Install or refresh local Git `pre-commit` and `pre-push` safety hooks when the
+  target project is a Git repository.
+- Record optional execution evidence from supported agent hooks.
+- Keep server-only secrets from being moved into client code or public bundles.
 - Warn or block before destructive scripts, database work, production deploys,
   credential changes, paid API/model usage, and oversized edits.
+- Push agents toward cost-aware architecture before they add paid services,
+  recurring infrastructure, model calls, queues, background workers, analytics
+  SDKs, or new databases.
+- For web projects, push agents to commonize repeated provider access behind
+  shared server-side helpers or endpoints and to use server-side caching,
+  batching, and rate limits before adding more client-side calls.
 - Report changed files, verification evidence, and remaining risk.
 
 ## Non-Responsibilities
@@ -30,10 +40,17 @@ work for approval.
   request.
 - Do not auto-fix destructive, architectural, deployment, billing, data, or
   credential decisions.
+- Do not add recurring infrastructure or paid dependencies by default when
+  existing code, a local/static path, server-side reuse, caching, batching, or
+  rate limits can satisfy the request.
+- Do not duplicate client-side fetching, paid provider calls, or model calls in
+  multiple components when a shared server-side access path can handle it.
+- Do not claim full agent control, rollback, or retry enforcement from execution
+  evidence alone.
 
 ## Boundary Rule
 
-Vibe-Guard may read an optional configured rule source when the user or project
+VibeGuard may read an optional configured rule source when the user or project
 explicitly provides one, but setup must remain a guardrail installation flow. A
-separate playbook connection flow belongs outside Vibe-Guard unless the user
+separate playbook connection flow belongs outside VibeGuard unless the user
 explicitly asks for that separate setup.
