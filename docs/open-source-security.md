@@ -18,7 +18,7 @@ may publish code to a remote repository or open source package.
 If `vibeguard` is not installed locally, the hook falls back to:
 
 ```bash
-npx --yes @taehwandev/vibeguard ...
+npx --yes @taehwandev/vibeguard@latest ...
 ```
 
 This keeps link-only setup usable for non-developers while still refreshing from
@@ -60,7 +60,9 @@ project to a similarly named public or production repository.
   one-time passwords, or GitHub Actions secret values.
 - Keep local values in ignored files such as `.env`, `.env.local`, or
   `.env.vibeguard.local`.
-- Keep `.env.example` value-free. It may list names, never real values.
+- Keep env templates such as `.env.example`, `.env.sample`, `.env.template`, and
+  `.env.dist` value-free. They may list names and placeholders, never real
+  values.
 - Do not print detected secret values in terminal output, docs, tests, issues,
   commits, screenshots, or support messages.
 - If a user pastes a secret into AI chat, treat it as exposed. The agent must

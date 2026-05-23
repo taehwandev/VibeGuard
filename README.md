@@ -11,9 +11,9 @@ target project. Do not ask the user to install VibeGuard manually.
 Run this in the target project:
 
 ```bash
-npx --yes @taehwandev/vibeguard setup .
-npx --yes @taehwandev/vibeguard audit . --fix
-npx --yes @taehwandev/vibeguard audit .
+npx --yes @taehwandev/vibeguard@latest setup .
+npx --yes @taehwandev/vibeguard@latest audit . --fix
+npx --yes @taehwandev/vibeguard@latest audit .
 ```
 
 Then continue with the user's original coding request.
@@ -64,7 +64,7 @@ safety gaps, run checks, and then continue with the user's original coding task.
 ## CLI
 
 ```bash
-npx --yes @taehwandev/vibeguard setup .
+npx --yes @taehwandev/vibeguard@latest setup .
 vibeguard setup .
 vibeguard audit .
 vibeguard audit . --fix
@@ -94,7 +94,8 @@ Audit exit codes:
 
 - Installs a managed `AGENTS.md` safety block.
 - Adds safe env ignore rules.
-- Creates value-free `.env.example` files.
+- Keeps runtime env files ignored and env templates such as `.env.example` and
+  `.env.sample` value-free.
 - Detects likely hard-coded secrets without printing secret values.
 - Quarantines simple JS/TS/Python hard-coded secrets with `--fix`.
 - Installs local `pre-commit` and `pre-push` hooks for another safety check

@@ -34,7 +34,8 @@ When an AI agent moves logic between server and client code:
 5. Add rate limits or quota controls before connecting the endpoint to paid
    services.
 6. Return only the minimum data the client needs.
-7. Keep `.env.example` value-free and document only variable names.
+7. Keep env templates such as `.env.example` and `.env.sample` value-free and
+   document only variable names or placeholders.
 
 ## Framework Notes
 

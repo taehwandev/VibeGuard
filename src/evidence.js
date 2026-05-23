@@ -3,7 +3,7 @@ import { appendUniqueLines, pathExists, readJsonIfExists, readTextIfExists, writ
 
 const EVIDENCE_FILE = path.join(".vibeguard", "session", "events.jsonl");
 const CLAUDE_LOCAL_SETTINGS = path.join(".claude", "settings.local.json");
-const CLAUDE_EVIDENCE_COMMAND = "npx --yes @taehwandev/vibeguard evidence claude-hook \"${CLAUDE_PROJECT_DIR:-.}\"";
+const CLAUDE_EVIDENCE_COMMAND = "npx --yes @taehwandev/vibeguard@latest evidence claude-hook \"${CLAUDE_PROJECT_DIR:-.}\"";
 const CLAUDE_HOOK_EVENTS = ["PostToolUse", "PostToolUseFailure"];
 
 const COMMAND_CHECKS = [
@@ -204,5 +204,5 @@ function ensureClaudeBashHook(existing, command) {
 }
 
 function isVibeGuardEvidenceHook(hook) {
-  return hook?.type === "command" && /\bvibeguard\s+evidence\s+claude-hook\b/.test(hook.command ?? "");
+  return hook?.type === "command" && /\bvibeguard(?:@[\w.-]+)?\s+evidence\s+claude-hook\b/.test(hook.command ?? "");
 }

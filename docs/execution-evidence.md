@@ -63,7 +63,7 @@ The installed hook pipes hook input into VibeGuard:
         "hooks": [
           {
             "type": "command",
-            "command": "npx --yes @taehwandev/vibeguard evidence claude-hook \"${CLAUDE_PROJECT_DIR:-.}\""
+            "command": "npx --yes @taehwandev/vibeguard@latest evidence claude-hook \"${CLAUDE_PROJECT_DIR:-.}\""
           }
         ]
       }
@@ -74,7 +74,7 @@ The installed hook pipes hook input into VibeGuard:
         "hooks": [
           {
             "type": "command",
-            "command": "npx --yes @taehwandev/vibeguard evidence claude-hook \"${CLAUDE_PROJECT_DIR:-.}\""
+            "command": "npx --yes @taehwandev/vibeguard@latest evidence claude-hook \"${CLAUDE_PROJECT_DIR:-.}\""
           }
         ]
       }

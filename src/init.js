@@ -161,9 +161,9 @@ For every task that may change code, configuration, dependencies, data,
 deployment, or credentials:
 
 1. Run \`vibeguard audit .\` before editing.
-2. If \`vibeguard\` is unavailable, run \`npx --yes @taehwandev/vibeguard audit .\` instead and use the same \`npx --yes @taehwandev/vibeguard ...\` form for fixes.
+2. If \`vibeguard\` is unavailable, run \`npx --yes @taehwandev/vibeguard@latest audit .\` instead and use the same \`npx --yes @taehwandev/vibeguard@latest ...\` form for fixes.
 3. If fixable findings exist, run \`vibeguard audit . --fix\` before implementing.
-4. Never print detected secret values. Keep real secrets only in ignored local env files and keep \`.env.example\` value-free.
+4. Never print detected secret values. Keep real secrets only in ignored runtime env files and keep env templates such as \`.env.example\` and \`.env.sample\` value-free.
 5. Ask before deleting data, running migrations, deploying to production, increasing paid API/model usage, adding recurring infrastructure, or changing credentials.
 6. Prefer cost-aware architecture. Before adding a paid service, database, queue, background worker, model call, analytics SDK, or cloud resource, explain why existing code or a simpler local/server-side design is insufficient.
 7. For web apps, commonize repeated API/model/provider calls behind shared server-side helpers or endpoints. Prefer server-side caching, batching, and rate limits before adding new client-side call paths.
@@ -176,6 +176,6 @@ deployment, or credentials:
 14. Keep VibeGuard scoped to guardrails. Do not clone, vendor, install, or link external playbooks or rule libraries unless the user explicitly asks for that separate setup.
 15. Preserve existing repo-local instructions. Only update the managed VibeGuard block between the \`vibeguard:start\` and \`vibeguard:end\` markers.
 
-Refresh this managed block with \`vibeguard init .\`, or with \`npx --yes @taehwandev/vibeguard init .\` when running directly from the repo link.
+Refresh this managed block with \`vibeguard init .\`, or with \`npx --yes @taehwandev/vibeguard@latest init .\` when running directly from the repo link.
 ${AGENT_RULE_END}`;
 }

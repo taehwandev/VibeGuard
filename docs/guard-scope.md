@@ -11,7 +11,8 @@ work for approval.
 - Install or refresh the VibeGuard-managed safety block in repo-local agent
   instructions.
 - Preserve existing project instructions outside the managed VibeGuard block.
-- Protect local env files and keep `.env.example` value-free.
+- Protect runtime env files and keep env templates such as `.env.example` and
+  `.env.sample` value-free.
 - Detect likely hard-coded secrets without printing the values.
 - Quarantine simple hard-coded JS/TS/Python secret assignments when `--fix` is
   requested.

@@ -41,6 +41,14 @@ changed files. If visibility is public or unknown, do not push credentials,
 env files, private keys, deployment changes, infrastructure changes, or
 paid-service changes without explicit review.
 
+## Env File Rule
+
+Runtime env files such as `.env`, `.env.local`, `.env.dev`, and
+`.env.production` are local secret containers and must stay ignored. Env template
+files such as `.env.example`, `.env.sample`, `.env.template`, and `.env.dist`
+may be shared only when they contain names and placeholders, not real keys,
+tokens, credentials, private keys, or password-bearing URLs.
+
 ## Cost-Aware Architecture Rule
 
 Do not solve small product requests by stacking paid services, new databases,

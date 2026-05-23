@@ -2,6 +2,14 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import {
+  hasEnvTemplateFile,
+  isEnvFileName,
+  isEnvTemplateFileName,
+  isRuntimeEnvFileName,
+  normalizeEnvValue,
+  shouldScanEnvFileName
+} from "./env-policy.js";
+import {
   isProbablyTextFile,
   lineNumberAt,
   listFiles,
@@ -215,7 +223,7 @@ function checkGitSafety(root, report, config) {
   report.git = context;
   if (!context.remoteName && context.changedFiles.length === 0) return;
 
-  const sensitiveFiles = context.changedFiles.filter(isSensitiveGitPath);
+  const sensitiveFiles = context.changedFiles.filter((file) => isSensitiveGitPath(file));
   if (sensitiveFiles.length > 0) {
     const trustedPrivate = context.visibility === "private" || context.visibility === "internal";
     addFinding(report, {
@@ -348,7 +356,8 @@ function readGitChangedFiles(root) {
 }
 
 function isSensitiveGitPath(filePath) {
-  if (/^\.env\.example$/i.test(filePath) || /(^|\/)\.env\.example$/i.test(filePath)) return false;
+  const basename = path.basename(filePath);
+  if (isEnvFileName(basename)) return isRuntimeEnvFileName(basename);
   return SENSITIVE_GIT_PATH_PATTERNS.some((pattern) => pattern.test(filePath));
 }
 
@@ -397,13 +406,14 @@ function formatFileList(files) {
 function checkEnvSafety(root, report) {
   const language = report.language;
   const rootEntries = fs.readdirSync(root);
-  const envFiles = rootEntries.filter((name) => name === ".env" || (name.startsWith(".env.") && name !== ".env.example"));
+  const envFiles = rootEntries.filter(isEnvFileName);
+  const runtimeEnvFiles = envFiles.filter(isRuntimeEnvFileName);
   const gitignorePath = path.join(root, ".gitignore");
   const gitignore = readTextIfExists(gitignorePath);
 
   if (!pathExists(gitignorePath)) {
     addFinding(report, {
-      severity: envFiles.length > 0 ? "block" : "warn",
+      severity: runtimeEnvFiles.length > 0 ? "block" : "warn",
       category: "security",
       fixable: true,
       action: "env-gitignore",
@@ -415,7 +425,7 @@ function checkEnvSafety(root, report) {
 
   if (!hasEnvIgnoreProtection(gitignore)) {
     addFinding(report, {
-      severity: envFiles.length > 0 ? "block" : "warn",
+      severity: runtimeEnvFiles.length > 0 ? "block" : "warn",
       category: "security",
       fixable: true,
       action: "env-gitignore",
@@ -425,7 +435,7 @@ function checkEnvSafety(root, report) {
     });
   }
 
-  if (envFiles.length > 0 && !pathExists(path.join(root, ".env.example"))) {
+  if (runtimeEnvFiles.length > 0 && !hasEnvTemplateFile(envFiles)) {
     addFinding(report, {
       severity: "warn",
       category: "security",
@@ -502,7 +512,7 @@ function checkFiles(root, report, options) {
 
   for (const filePath of files) {
     const basename = path.basename(filePath);
-    if (basename.startsWith(".env") && basename !== ".env.example") {
+    if (isEnvFileName(basename) && !shouldScanEnvFileName(basename)) {
       report.stats.skippedFiles += 1;
       continue;
     }
@@ -528,6 +538,7 @@ function checkFiles(root, report, options) {
     }
 
     scanSecretAssignments(root, filePath, content, report);
+    scanEnvTemplateAssignments(root, filePath, content, report);
     scanKnownSecretValues(root, filePath, content, report);
   }
 }
@@ -624,6 +635,34 @@ function scanKnownSecretValues(root, filePath, content, report) {
   }
 }
 
+function scanEnvTemplateAssignments(root, filePath, content, report) {
+  const basename = path.basename(filePath);
+  if (!isEnvTemplateFileName(basename)) return;
+
+  const relative = relativePath(root, filePath);
+  const pattern = /^\s*(?:export\s+)?(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?<raw>.*)$/gm;
+  for (const match of content.matchAll(pattern)) {
+    const name = match.groups?.name;
+    const value = normalizeEnvValue(match.groups?.raw ?? "");
+    if (!name || !value) continue;
+    if (isLikelyPlaceholder(value)) continue;
+    if (matchesKnownSecretValue(value)) continue;
+    if (!isSensitiveName(name)) continue;
+    if (isDescriptiveSensitiveName(name)) continue;
+    if (!looksLikeHighEntropySecret(value)) continue;
+
+    addFinding(report, {
+      severity: "warn",
+      category: "security",
+      file: relative,
+      line: lineNumberAt(content, match.index),
+      message: t(report.language, "finding.highEntropySensitiveAssignment.message", { envName: toEnvName(name) }),
+      recommendation: t(report.language, "finding.highEntropySensitiveAssignment.recommendation"),
+      evidence: `${name}=<redacted>`
+    });
+  }
+}
+
 function isInGeneratedSecretFinding(report, relative, index) {
   return report.findings.some((finding) => {
     return finding.file === relative && finding.fix?.start <= index && index <= finding.fix?.end;
@@ -673,6 +712,7 @@ function matchesKnownSecretValue(value) {
 }
 
 function isLikelyPlaceholder(value) {
+  if (value.trim() === "") return true;
   const lower = value.toLowerCase();
   if (lower.includes("example") || lower.includes("placeholder")) return true;
   if (lower.includes("your_") || lower.includes("your-")) return true;

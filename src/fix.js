@@ -1,12 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
+import { ENV_TEMPLATE_UNIGNORE_LINES, hasEnvTemplateFile, isEnvFileName, isRuntimeEnvFileName } from "./env-policy.js";
 import { appendUniqueLines, pathExists, readTextIfExists, writeTextFile } from "./fs-utils.js";
 
 const ENV_GITIGNORE_LINES = [
   "# VibeGuard local secrets",
   ".env",
   ".env.*",
-  "!.env.example",
+  ...ENV_TEMPLATE_UNIGNORE_LINES,
   ".env.vibeguard.local"
 ];
 
@@ -37,8 +38,7 @@ export function applyFixes(projectRoot, report) {
 function collectLocalEnvNames(projectRoot) {
   const names = new Set();
   for (const entry of fs.readdirSync(projectRoot)) {
-    if (entry === ".env.example") continue;
-    if (entry !== ".env" && !entry.startsWith(".env.")) continue;
+    if (!isRuntimeEnvFileName(entry)) continue;
 
     const content = readTextIfExists(path.join(projectRoot, entry));
     for (const name of parseEnvNames(content)) names.add(name);
@@ -54,8 +54,8 @@ export function ensureEnvGitignore(projectRoot) {
 export function ensureEnvExample(projectRoot, envNames) {
   const uniqueNames = [...new Set(envNames.filter(Boolean))].sort();
   if (uniqueNames.length === 0) {
-    const envFiles = fs.readdirSync(projectRoot).filter((name) => name === ".env" || name.startsWith(".env."));
-    if (envFiles.length === 0 || pathExists(path.join(projectRoot, ".env.example"))) return false;
+    const envFiles = fs.readdirSync(projectRoot).filter(isEnvFileName);
+    if (envFiles.length === 0 || hasEnvTemplateFile(envFiles) || pathExists(path.join(projectRoot, ".env.example"))) return false;
   }
 
   const examplePath = path.join(projectRoot, ".env.example");

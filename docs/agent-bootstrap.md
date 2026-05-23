@@ -24,19 +24,19 @@ asks for that separate setup.
 2. Run setup from the GitHub package:
 
    ```bash
-   npx --yes @taehwandev/vibeguard setup .
+   npx --yes @taehwandev/vibeguard@latest setup .
    ```
 
 3. Run the safety fixer:
 
    ```bash
-   npx --yes @taehwandev/vibeguard audit . --fix
+   npx --yes @taehwandev/vibeguard@latest audit . --fix
    ```
 
 4. Run the safety audit again:
 
    ```bash
-   npx --yes @taehwandev/vibeguard audit .
+   npx --yes @taehwandev/vibeguard@latest audit .
    ```
 
 5. Continue with the user's original coding request only after safe fixes are
@@ -76,7 +76,7 @@ approves the next risky step.
   server. Guide the user to rotate it and enter a new value only through a local
   provider UI or secret-store prompt.
 - Keep real secrets in ignored local env files only.
-- Keep `.env.example` value-free.
+- Keep env templates such as `.env.example` and `.env.sample` value-free.
 - Keep provider keys, database URLs, service-role keys, signing secrets, and
   webhook secrets server-side only.
 - Ask before deleting data, running migrations, deploying to production,

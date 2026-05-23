@@ -96,7 +96,7 @@ test("init creates project policy and config", () => {
   assert.match(agentInstructions, /commonize repeated API\/model\/provider calls/);
   assert.match(
     agentInstructions,
-    /npx --yes @taehwandev\/vibeguard audit \./
+    /npx --yes @taehwandev\/vibeguard@latest audit \./
   );
 
   const preCommit = fs.readFileSync(path.join(root, ".git", "hooks", "pre-commit"), "utf8");
@@ -174,6 +174,50 @@ test("fix creates env example names from existing local env files", () => {
   assert.match(example, /^SERVICE_TOKEN=$/m);
   assert.match(example, /^PUBLIC_MODE=$/m);
   assert.equal(example.includes(secretValue), false);
+});
+
+test("env templates are shareable but still scanned for real secrets", () => {
+  const root = makeRealGitProject();
+  fs.writeFileSync(path.join(root, "package.json"), `${JSON.stringify({ name: "env-template-app" }, null, 2)}\n`, "utf8");
+  runGit(root, ["remote", "add", "origin", "https://github.com/example/env-template-app.git"]);
+  runGit(root, ["config", "vibeguard.repositoryVisibility", "public"]);
+  fs.writeFileSync(path.join(root, ".env.sample"), "OPENAI_API_KEY=\nPUBLIC_BASE_URL=http://localhost:3000\n", "utf8");
+  runGit(root, ["add", ".env.sample"]);
+
+  const safeReport = auditProject(root);
+  assert.equal(safeReport.summary.blocks, 0);
+  assert.equal(safeReport.findings.some((finding) => finding.category === "repository" && finding.severity === "block"), false);
+
+  const secretValue = `sk-proj-${"e".repeat(24)}${"5".repeat(12)}`;
+  fs.writeFileSync(path.join(root, ".env.template"), `OPENAI_API_KEY=${secretValue}\n`, "utf8");
+
+  const unsafeReport = auditProject(root);
+  assert.equal(unsafeReport.findings.some((finding) => finding.message.includes("OpenAI API key")), true);
+  assert.equal(unsafeReport.summary.blocks, 1);
+  assert.equal(JSON.stringify(sanitizeReport(unsafeReport)).includes(secretValue), false);
+});
+
+test("runtime env files are protected while existing env templates prevent duplicate examples", () => {
+  const publicRoot = makeRealGitProject();
+  fs.writeFileSync(path.join(publicRoot, "package.json"), `${JSON.stringify({ name: "runtime-env-app" }, null, 2)}\n`, "utf8");
+  runGit(publicRoot, ["remote", "add", "origin", "https://github.com/example/runtime-env-app.git"]);
+  runGit(publicRoot, ["config", "vibeguard.repositoryVisibility", "public"]);
+  fs.writeFileSync(path.join(publicRoot, ".env.dev"), "API_URL=http://localhost:3000\n", "utf8");
+  runGit(publicRoot, ["add", ".env.dev"]);
+
+  const publicReport = auditProject(publicRoot);
+  assert.equal(publicReport.gates.repository.status, "block");
+  assert.equal(publicReport.findings.some((finding) => finding.message.includes(".env.dev")), true);
+
+  const templateRoot = makeTempProject();
+  fs.writeFileSync(path.join(templateRoot, ".env.sample"), "SERVICE_TOKEN=\nPUBLIC_MODE=true\n", "utf8");
+
+  const applied = applyFixes(templateRoot, auditProject(templateRoot));
+  const gitignore = fs.readFileSync(path.join(templateRoot, ".gitignore"), "utf8");
+  assert.ok(applied.includes("Updated .gitignore env protection rules."));
+  assert.match(gitignore, /^!\.env\.sample$/m);
+  assert.match(gitignore, /^!\.env\*\.template$/m);
+  assert.equal(fs.existsSync(path.join(templateRoot, ".env.example")), false);
 });
 
 test("prompt includes actionable guardrails", () => {
@@ -393,7 +437,7 @@ test("evidence installs Claude Code local hook idempotently", () => {
   assert.equal(installed.status, 0);
   const result = JSON.parse(installed.stdout);
   assert.deepEqual(result.events, ["PostToolUse", "PostToolUseFailure"]);
-  assert.match(result.command, /npx --yes @taehwandev\/vibeguard evidence claude-hook/);
+  assert.match(result.command, /npx --yes @taehwandev\/vibeguard@latest evidence claude-hook/);
 
   const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
   assert.deepEqual(settings.permissions.allow, ["Bash(npm test)"]);
@@ -544,5 +588,5 @@ function countClaudeEvidenceHooks(settings) {
   return Object.values(settings.hooks)
     .flat()
     .flatMap((group) => group.hooks)
-    .filter((hook) => /\bvibeguard\s+evidence\s+claude-hook\b/.test(hook.command)).length;
+    .filter((hook) => /(?:\bvibeguard|@taehwandev\/vibeguard@latest)\s+evidence\s+claude-hook\b/.test(hook.command)).length;
 }
