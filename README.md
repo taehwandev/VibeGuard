@@ -11,9 +11,9 @@ target project. Do not ask the user to install VibeGuard manually.
 Run this in the target project:
 
 ```bash
-npx --yes vibeguard setup .
-npx --yes vibeguard audit . --fix
-npx --yes vibeguard audit .
+npx --yes @taehwandev/vibeguard setup .
+npx --yes @taehwandev/vibeguard audit . --fix
+npx --yes @taehwandev/vibeguard audit .
 ```
 
 Then continue with the user's original coding request.
@@ -64,7 +64,7 @@ safety gaps, run checks, and then continue with the user's original coding task.
 ## CLI
 
 ```bash
-npx --yes vibeguard setup .
+npx --yes @taehwandev/vibeguard setup .
 vibeguard setup .
 vibeguard audit .
 vibeguard audit . --fix

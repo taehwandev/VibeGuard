@@ -52,7 +52,7 @@ GitHub Actions workflow in `.github/workflows/publish-npm.yml`.
 Use the release number as the package version. Use a `v` prefix for Git tags:
 
 ```text
-package: vibeguard@26.21.0
+package: @taehwandev/vibeguard@26.21.0
 git tag: v26.21.0
 ```
 
@@ -99,7 +99,7 @@ terminal logs, or `.npmrc`.
 Immediately after the first publish succeeds, configure trusted publishing:
 
 ```bash
-npm trust github vibeguard --file publish-npm.yml --repo taehwandev/VibeGuard --env npm-release
+npm trust github @taehwandev/vibeguard --file publish-npm.yml --repo taehwandev/VibeGuard --env npm-release
 ```
 
 Then remove the temporary secret and revoke/delete the npm token:

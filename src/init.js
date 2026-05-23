@@ -161,7 +161,7 @@ For every task that may change code, configuration, dependencies, data,
 deployment, or credentials:
 
 1. Run \`vibeguard audit .\` before editing.
-2. If \`vibeguard\` is unavailable, run \`npx --yes vibeguard audit .\` instead and use the same \`npx --yes vibeguard ...\` form for fixes.
+2. If \`vibeguard\` is unavailable, run \`npx --yes @taehwandev/vibeguard audit .\` instead and use the same \`npx --yes @taehwandev/vibeguard ...\` form for fixes.
 3. If fixable findings exist, run \`vibeguard audit . --fix\` before implementing.
 4. Never print detected secret values. Keep real secrets only in ignored local env files and keep \`.env.example\` value-free.
 5. Ask before deleting data, running migrations, deploying to production, increasing paid API/model usage, adding recurring infrastructure, or changing credentials.
@@ -176,6 +176,6 @@ deployment, or credentials:
 14. Keep VibeGuard scoped to guardrails. Do not clone, vendor, install, or link external playbooks or rule libraries unless the user explicitly asks for that separate setup.
 15. Preserve existing repo-local instructions. Only update the managed VibeGuard block between the \`vibeguard:start\` and \`vibeguard:end\` markers.
 
-Refresh this managed block with \`vibeguard init .\`, or with \`npx --yes vibeguard init .\` when running directly from the repo link.
+Refresh this managed block with \`vibeguard init .\`, or with \`npx --yes @taehwandev/vibeguard init .\` when running directly from the repo link.
 ${AGENT_RULE_END}`;
 }

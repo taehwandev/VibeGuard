@@ -97,7 +97,7 @@ PATH="$vibeguard_repo_root/node_modules/.bin:$PATH"
 if command -v vibeguard >/dev/null 2>&1; then
   vibeguard ${hook.command}
 elif command -v npx >/dev/null 2>&1; then
-  npx --yes vibeguard ${hook.command}
+  npx --yes @taehwandev/vibeguard ${hook.command}
 else
   echo "VibeGuard: install Node.js/npm or make vibeguard available before committing or pushing." >&2
   exit 1

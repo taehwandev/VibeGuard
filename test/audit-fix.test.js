@@ -96,7 +96,7 @@ test("init creates project policy and config", () => {
   assert.match(agentInstructions, /commonize repeated API\/model\/provider calls/);
   assert.match(
     agentInstructions,
-    /npx --yes vibeguard audit \./
+    /npx --yes @taehwandev\/vibeguard audit \./
   );
 
   const preCommit = fs.readFileSync(path.join(root, ".git", "hooks", "pre-commit"), "utf8");
@@ -393,7 +393,7 @@ test("evidence installs Claude Code local hook idempotently", () => {
   assert.equal(installed.status, 0);
   const result = JSON.parse(installed.stdout);
   assert.deepEqual(result.events, ["PostToolUse", "PostToolUseFailure"]);
-  assert.match(result.command, /npx --yes vibeguard evidence claude-hook/);
+  assert.match(result.command, /npx --yes @taehwandev\/vibeguard evidence claude-hook/);
 
   const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
   assert.deepEqual(settings.permissions.allow, ["Bash(npm test)"]);

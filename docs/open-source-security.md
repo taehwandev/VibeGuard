@@ -18,7 +18,7 @@ may publish code to a remote repository or open source package.
 If `vibeguard` is not installed locally, the hook falls back to:
 
 ```bash
-npx --yes vibeguard ...
+npx --yes @taehwandev/vibeguard ...
 ```
 
 This keeps link-only setup usable for non-developers while still refreshing from

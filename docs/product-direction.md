@@ -43,7 +43,7 @@ user's way."
 - `vibeguard update .` reruns the same idempotent setup path and refreshes only
   the VibeGuard managed block.
 - Agents should prefer the published npm package form:
-  `npx --yes vibeguard ...`.
+  `npx --yes @taehwandev/vibeguard ...`.
 - The GitHub repository link remains the human-friendly instruction anchor, but
   the agent should use npm once the package is available.
   That keeps the tool current without requiring the user to understand global

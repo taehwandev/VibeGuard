@@ -24,19 +24,19 @@ asks for that separate setup.
 2. Run setup from the GitHub package:
 
    ```bash
-   npx --yes vibeguard setup .
+   npx --yes @taehwandev/vibeguard setup .
    ```
 
 3. Run the safety fixer:
 
    ```bash
-   npx --yes vibeguard audit . --fix
+   npx --yes @taehwandev/vibeguard audit . --fix
    ```
 
 4. Run the safety audit again:
 
    ```bash
-   npx --yes vibeguard audit .
+   npx --yes @taehwandev/vibeguard audit .
    ```
 
 5. Continue with the user's original coding request only after safe fixes are

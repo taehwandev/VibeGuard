@@ -83,7 +83,7 @@ const translations = {
     chatAgentLogAgents: "[ok] Created AGENTS.md safety instructions.",
     chatAgentLogHooks: "[ok] Installed pre-commit safety hooks.",
     chatAgentOutro: "VibeGuard is applied. Before database deletion, large paid API usage, or sensitive production deploys, I will pause and ask for approval.",
-    terminalOutput: `$ npx --yes vibeguard setup .
+    terminalOutput: `$ npx --yes @taehwandev/vibeguard setup .
 
 Applied fixes:
 [ok] Updated .gitignore env protection rules.
@@ -178,7 +178,7 @@ Overall: Ready`,
     chatAgentLogAgents: "[ok] AGENTS.md 에이전트 안전 지침 생성",
     chatAgentLogHooks: "[ok] pre-commit 안전 훅 설치",
     chatAgentOutro: "VibeGuard 적용이 완료되었습니다. 이제 데이터 삭제, 유료 API 대량 사용, 민감한 운영 배포가 필요하면 먼저 멈춰서 승인을 요청하겠습니다.",
-    terminalOutput: `$ npx --yes vibeguard setup .
+    terminalOutput: `$ npx --yes @taehwandev/vibeguard setup .
 
 적용된 수정:
 [ok] .gitignore env 보호 규칙을 업데이트했습니다.
