@@ -1,0 +1,10 @@
+node_modules/
+coverage/
+.DS_Store
+
+# Vibe-Guard local secrets
+.env
+.env.*
+!.env.example
+.env.vibeguard.local
+

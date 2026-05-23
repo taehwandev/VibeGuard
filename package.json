@@ -1,0 +1,26 @@
+{
+  "name": "vibe-guard",
+  "version": "0.1.0",
+  "description": "Preflight safety checker and auto-fixer for non-developers using AI coding agents.",
+  "type": "module",
+  "bin": {
+    "vibe-guard": "./src/cli.js"
+  },
+  "scripts": {
+    "test": "node --test",
+    "start": "node src/cli.js",
+    "audit": "node src/cli.js audit"
+  },
+  "keywords": [
+    "ai-coding",
+    "security",
+    "secrets",
+    "prompt",
+    "agent"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
+
