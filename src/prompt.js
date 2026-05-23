@@ -57,6 +57,7 @@ export function buildAgentPrompt(report, userRequest = "", options = {}) {
   lines.push(`8. ${t(language, "prompt.rule8")}`);
   lines.push(`9. ${t(language, "prompt.rule9")}`);
   lines.push(`10. ${t(language, "prompt.rule10")}`);
+  lines.push(`11. ${t(language, "prompt.rule11")}`);
 
   if (report.rules.available) {
     lines.push("");

@@ -25,6 +25,9 @@ export function initProject(projectRoot, options = {}) {
           display: "traffic-light",
           rulesPath: options.rulesPath ?? null,
           maxFileLines: 800,
+          repository: {
+            visibility: "unknown"
+          },
           autoFix: {
             envGitignore: true,
             envExample: true,
@@ -109,6 +112,7 @@ summary simple, and handle safe fixes behind the scenes. Developers can adjust
 | Cost | Paid APIs, recurring infrastructure, model calls, or cloud services without simpler alternatives, quotas, or test/prod separation |
 | Data | DB deletion, migration, production data, destructive scripts |
 | Structure | Oversized files, unclear ownership, risky one-shot edits |
+| Repository | Wrong remote, public/unknown visibility, sensitive Git changes |
 
 ## Local Shared Rules
 
@@ -136,7 +140,8 @@ that can create cost or quota pressure.
 2. Run \`vibeguard audit . --fix\` for fixable safety issues.
 3. Do not print secret values.
 4. Rotate any secret that may already have been exposed.
-5. Show changed files and verification evidence before finishing.
+5. Before commit or push, confirm \`git remote -v\`, repository visibility, and changed files.
+6. Show changed files and verification evidence before finishing.
 `;
 }
 
@@ -154,12 +159,13 @@ deployment, or credentials:
 5. Ask before deleting data, running migrations, deploying to production, increasing paid API/model usage, adding recurring infrastructure, or changing credentials.
 6. Prefer cost-aware architecture. Before adding a paid service, database, queue, background worker, model call, analytics SDK, or cloud resource, explain why existing code or a simpler local/server-side design is insufficient.
 7. For web apps, commonize repeated API/model/provider calls behind shared server-side helpers or endpoints. Prefer server-side caching, batching, and rate limits before adding new client-side call paths.
-8. After editing, run relevant tests and \`vibeguard audit .\` again before finishing.
-9. Before creating a commit, run \`vibeguard audit .\`; before pushing or publishing, run \`vibeguard audit . --strict\`.
-10. If execution evidence is available, run \`vibeguard evidence .\` before the final response and do not claim tests or audits ran unless they were observed.
-11. Keep secrets server-side. Do not expose provider keys, database URLs, signing secrets, service-role keys, or webhook secrets to client code.
-12. Keep VibeGuard scoped to guardrails. Do not clone, vendor, install, or link external playbooks or rule libraries unless the user explicitly asks for that separate setup.
-13. Preserve existing repo-local instructions. Only update the managed VibeGuard block between the \`vibeguard:start\` and \`vibeguard:end\` markers.
+8. Before commit or push, verify \`git remote -v\`, repository visibility, and changed files. If the repository is public or visibility is unknown, stop before pushing secrets, env files, credentials, deployment, infrastructure, or paid-service changes.
+9. After editing, run relevant tests and \`vibeguard audit .\` again before finishing.
+10. Before creating a commit, run \`vibeguard audit .\`; before pushing or publishing, run \`vibeguard audit . --strict\`.
+11. If execution evidence is available, run \`vibeguard evidence .\` before the final response and do not claim tests or audits ran unless they were observed.
+12. Keep secrets server-side. Do not expose provider keys, database URLs, signing secrets, service-role keys, or webhook secrets to client code.
+13. Keep VibeGuard scoped to guardrails. Do not clone, vendor, install, or link external playbooks or rule libraries unless the user explicitly asks for that separate setup.
+14. Preserve existing repo-local instructions. Only update the managed VibeGuard block between the \`vibeguard:start\` and \`vibeguard:end\` markers.
 
 Refresh this managed block with \`vibeguard init .\`, or with \`npx --yes vibeguard init .\` when running directly from the repo link.
 ${AGENT_RULE_END}`;

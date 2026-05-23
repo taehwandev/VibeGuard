@@ -17,10 +17,15 @@ work for approval.
   requested.
 - Install or refresh local Git `pre-commit` and `pre-push` safety hooks when the
   target project is a Git repository.
+- Check Git remote naming, configured repository visibility, and changed files
+  before commit or push.
 - Record optional execution evidence from supported agent hooks.
 - Keep server-only secrets from being moved into client code or public bundles.
 - Warn or block before destructive scripts, database work, production deploys,
   credential changes, paid API/model usage, and oversized edits.
+- Block sensitive Git changes when repository visibility is public or unknown;
+  warn on similar-but-not-exact remote names and public deployment or
+  infrastructure changes.
 - Push agents toward cost-aware architecture before they add paid services,
   recurring infrastructure, model calls, queues, background workers, analytics
   SDKs, or new databases.

@@ -24,6 +24,34 @@ npx --yes vibeguard ...
 This keeps link-only setup usable for non-developers while still refreshing from
 the public package source.
 
+## Repository Target And Visibility
+
+Before commit or push, VibeGuard checks the local Git remote, the configured
+repository visibility, and the changed file list.
+
+Git itself does not always expose whether a remote repository is public or
+private. VibeGuard treats visibility as:
+
+- `public`: confirmed public repository.
+- `private` or `internal`: confirmed non-public repository.
+- `unknown`: local Git cannot confirm visibility.
+
+Set visibility explicitly when local Git cannot infer it:
+
+```bash
+git config vibeguard.repositoryVisibility private
+git config vibeguard.repositoryVisibility public
+```
+
+Public or unknown visibility is treated conservatively. Sensitive changed files
+such as `.env`, private keys, service account files, credentials, or secret
+config files block the audit. Deployment, infrastructure, migration, and
+workflow changes warn so the strict pre-push gate can stop and force review.
+
+VibeGuard also warns when the remote repository name is very close to the local
+project name but not exact. This catches mistakes such as pushing a local
+project to a similarly named public or production repository.
+
 ## Key And Secret Rules
 
 - Never commit real API keys, database URLs, private keys, signing secrets,
@@ -45,8 +73,11 @@ Before publishing open source code or packages:
 1. Run `vibeguard audit . --fix`.
 2. Run `vibeguard audit . --strict`.
 3. Run the project test/build checks.
-4. Inspect `git diff --cached` before commit.
-5. Push only after the pre-push hook passes.
+4. Confirm `git remote -v` points to the intended repository.
+5. Confirm repository visibility is correct or configure
+   `vibeguard.repositoryVisibility`.
+6. Inspect `git diff --cached` before commit.
+7. Push only after the pre-push hook passes.
 
 VibeGuard reduces common exposure paths, but it does not replace provider-side
 secret scanning, branch protection, code review, or key rotation.

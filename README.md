@@ -24,6 +24,10 @@ Rules:
 - Preserve existing repo-local instructions.
 - Stop and ask before destructive, costly, production, credential, or
   data-changing work.
+- Before commit or push, verify `git remote -v`, repository visibility, and
+  changed files. Public or unknown-visibility repositories require extra review
+  before pushing credentials, env files, deployment, infrastructure, or
+  paid-service changes.
 - Prefer cost-aware architecture. Before adding a paid service, database,
   queue, background worker, model call, analytics SDK, or cloud resource,
   explain why existing code or a simpler local/server-side design is
@@ -92,6 +96,8 @@ Audit exit codes:
 - Quarantines simple JS/TS/Python hard-coded secrets with `--fix`.
 - Installs local `pre-commit` and `pre-push` hooks for another safety check
   before commit and push.
+- Checks Git remote naming, configured repository visibility, and changed files
+  so sensitive changes do not get pushed to the wrong or public repository.
 - Records optional execution evidence from agent hooks so verification claims
   can be checked against observed commands.
 - Installs an optional local Claude Code evidence hook with
@@ -115,6 +121,9 @@ mode is intentionally guided:
   "display": "traffic-light",
   "rulesPath": null,
   "maxFileLines": 800,
+  "repository": {
+    "visibility": "unknown"
+  },
   "autoFix": {
     "envGitignore": true,
     "envExample": true,

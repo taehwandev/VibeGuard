@@ -18,6 +18,10 @@ agents.
 - For web-app guidance, prefer common server-side helpers/endpoints for repeated
   API, provider, or model calls; add server-side caching, batching, and rate
   limits before recommending more client-side calls or new infrastructure.
+- Treat Git remote safety as a guardrail. Before commit or push, verify the
+  actual remote target, repository visibility, and changed files. Public or
+  unknown-visibility repositories require extra care for credentials, env files,
+  deployment, infrastructure, and paid-service changes.
 - Keep generated prompts actionable for AI coding agents, not educational essays.
 
 ## Verification

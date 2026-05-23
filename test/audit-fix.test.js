@@ -99,6 +99,7 @@ test("init creates project policy and config", () => {
   assert.equal(config.display, "traffic-light");
   assert.equal(config.rulesPath, null);
   assert.equal(config.maxFileLines, 800);
+  assert.equal(config.repository.visibility, "unknown");
 });
 
 test("audit reads developer tuning from .vibeguard.json", () => {
@@ -172,6 +173,7 @@ test("prompt includes actionable guardrails", () => {
   assert.match(prompt, /do not claim verification that was not observed/);
   assert.match(prompt, /Prefer cost-aware architecture/);
   assert.match(prompt, /commonize repeated API\/model\/provider calls/);
+  assert.match(prompt, /verify `git remote -v`, repository visibility, and changed files/);
 });
 
 test("audit avoids descriptive sensitive-name false positives", () => {
@@ -226,6 +228,49 @@ test("audit blocks database connection strings without exposing values", () => {
   const report = auditProject(root);
   assert.equal(report.findings.some((finding) => finding.message.includes("database connection string")), true);
   assert.equal(JSON.stringify(sanitizeReport(report)).includes("generated-password-123"), false);
+});
+
+test("audit blocks sensitive git changes when repository visibility is public or unknown", () => {
+  const root = makeRealGitProject();
+  fs.writeFileSync(path.join(root, "package.json"), `${JSON.stringify({ name: "customer-app" }, null, 2)}\n`, "utf8");
+  runGit(root, ["remote", "add", "origin", "https://github.com/example/customer-app.git"]);
+  runGit(root, ["config", "vibeguard.repositoryVisibility", "public"]);
+  fs.writeFileSync(path.join(root, "prod-service-account.json"), "{}\n", "utf8");
+  runGit(root, ["add", "prod-service-account.json"]);
+
+  const report = auditProject(root);
+  assert.equal(report.gates.repository.status, "block");
+  assert.equal(report.findings.some((finding) => finding.category === "repository" && finding.severity === "block"), true);
+  assert.equal(JSON.stringify(sanitizeReport(report)).includes("https://github.com"), false);
+});
+
+test("audit warns rather than blocks sensitive git changes in confirmed private repositories", () => {
+  const root = makeRealGitProject();
+  fs.writeFileSync(path.join(root, "package.json"), `${JSON.stringify({ name: "customer-app" }, null, 2)}\n`, "utf8");
+  runGit(root, ["remote", "add", "origin", "git@github.com:example/customer-app.git"]);
+  runGit(root, ["config", "vibeguard.repositoryVisibility", "private"]);
+  fs.writeFileSync(path.join(root, "prod-service-account.json"), "{}\n", "utf8");
+  runGit(root, ["add", "prod-service-account.json"]);
+
+  const report = auditProject(root);
+  assert.equal(report.gates.repository.status, "warn");
+  assert.equal(report.summary.blocks, 0);
+  assert.equal(report.findings.some((finding) => finding.category === "repository" && finding.severity === "warn"), true);
+});
+
+test("audit warns when git remote name is suspiciously similar but not exact", () => {
+  const root = makeRealGitProject();
+  fs.writeFileSync(path.join(root, "package.json"), `${JSON.stringify({ name: "client-admin" }, null, 2)}\n`, "utf8");
+  runGit(root, ["remote", "add", "origin", "https://github.com/example/client-admin-prod.git"]);
+  runGit(root, ["config", "vibeguard.repositoryVisibility", "private"]);
+  fs.writeFileSync(path.join(root, "index.js"), "console.log('ok');\n", "utf8");
+  runGit(root, ["add", "index.js"]);
+
+  const report = auditProject(root);
+  const finding = report.findings.find((item) => item.message.includes("remote name"));
+  assert.equal(finding?.severity, "warn");
+  assert.match(finding.message, /client-admin/);
+  assert.match(finding.message, /client-admin-prod/);
 });
 
 test("audit exits non-zero for blocked reports and strict warnings", () => {
@@ -456,6 +501,18 @@ function makeTempProject() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "vibeguard-test-"));
   fs.mkdirSync(path.join(root, ".git"));
   return root;
+}
+
+function makeRealGitProject() {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "vibeguard-git-test-"));
+  runGit(root, ["init", "-q"]);
+  return root;
+}
+
+function runGit(cwd, args) {
+  const result = spawnSync("git", args, { cwd, encoding: "utf8" });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  return result.stdout.trim();
 }
 
 function runCli(args, options = {}) {

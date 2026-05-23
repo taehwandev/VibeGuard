@@ -46,6 +46,12 @@ Setup installs local `pre-commit` and `pre-push` hooks when the target project
 is a Git repository. The commit hook runs `vibeguard audit .`; the push hook
 runs `vibeguard audit . --strict`.
 
+The audit also checks Git remote safety. Before commit or push, confirm the
+actual remote target with `git remote -v`, confirm whether the repository is
+public, private, internal, or unknown, and review changed files. If visibility
+is public or unknown, stop before pushing credentials, env files, deployment
+configuration, infrastructure, migrations, or paid-service changes.
+
 When an agent hook adapter is available, record execution evidence and summarize
 it with `vibeguard evidence .` before final reporting. Do not claim that tests,
 audits, builds, or typechecks ran unless they appear in the execution evidence
@@ -71,6 +77,8 @@ approves the next risky step.
   webhook secrets server-side only.
 - Ask before deleting data, running migrations, deploying to production,
   increasing paid API/model usage, or changing credentials.
+- Confirm Git remote target, repository visibility, and changed files before
+  commit or push. Treat public or unknown visibility as higher risk.
 - Use cost-aware architecture. Before adding a paid service, database, queue,
   background worker, model call, analytics SDK, or cloud resource, check whether
   existing code, a local/static path, server-side reuse, caching, batching, or

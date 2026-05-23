@@ -11,7 +11,9 @@ It should not behave like a lecture. It should:
 3. block dangerous work,
 4. push the agent toward cost-aware architecture before it adds paid services or
    recurring infrastructure,
-5. install persistent agent instructions so the user does not need to write a
+5. verify Git remote target, repository visibility, and changed files before
+   commit or push,
+6. install persistent agent instructions so the user does not need to write a
    careful safety prompt every time.
 
 It should stay a guard. It must not become an installer or router for external

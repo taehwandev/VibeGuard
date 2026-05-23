@@ -11,6 +11,7 @@ project.
 | Cost | Paid APIs, model calls, cloud services, recurring infrastructure | Require budget guardrails and simpler alternatives |
 | Data | DB writes, migrations, destructive actions, user data | Require backup or staging |
 | Structure | Large files, unclear boundaries, risky scripts | Split or ask for plan |
+| Repository | Wrong remote, public/unknown visibility, sensitive Git changes | Verify target before commit or push |
 
 ## Agent Rule
 
@@ -27,6 +28,12 @@ rotate it even after moving it into an ignored env file.
 
 Run `vibeguard audit .` before commits and `vibeguard audit . --strict`
 before pushes or public package publication.
+
+Before commit or push, verify the actual remote target with `git remote -v`,
+confirm whether the repository is public, private, or internal, and review the
+changed files. If visibility is public or unknown, do not push credentials,
+env files, private keys, deployment changes, infrastructure changes, or
+paid-service changes without explicit review.
 
 ## Cost-Aware Architecture Rule
 
