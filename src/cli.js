@@ -5,60 +5,48 @@ import { auditProject, sanitizeReport } from "./audit.js";
 import { applyFixes } from "./fix.js";
 import { formatAppliedFixes, formatAuditReport } from "./format.js";
 import { expandHome, pathExists } from "./fs-utils.js";
+import { cliHelp, resolveLanguage } from "./i18n.js";
 import { initProject } from "./init.js";
 import { buildAgentPrompt } from "./prompt.js";
-
-const HELP = `Vibe-Guard
-
-Usage:
-  vibe-guard init|setup [project] [--rules <path>]
-  vibe-guard update [project] [--rules <path>]
-  vibe-guard audit [project] [--fix] [--json] [--rules <path>]
-  vibe-guard prompt [project] --request "<what you want>" [--rules <path>]
-
-Examples:
-  vibe-guard setup . --rules ~/Documents/KeyFlowVault/agent
-  vibe-guard update .
-  vibe-guard audit .
-  vibe-guard audit . --fix
-  vibe-guard prompt . --request "Add login"
-`;
 
 main();
 
 function main() {
   try {
-    if (process.argv.length <= 2 || process.argv[2] === "--help" || process.argv[2] === "-h") {
-      process.stdout.write(HELP);
+    const rawArgs = process.argv.slice(2);
+    const parsed = parseArgs(rawArgs);
+    const language = resolveLanguage(parsed.flags.lang);
+
+    if (rawArgs.length === 0 || parsed.command === "--help" || parsed.command === "-h" || parsed.flags.help) {
+      process.stdout.write(cliHelp(language));
       return;
     }
 
-    const parsed = parseArgs(process.argv.slice(2));
-    if (!parsed.command || parsed.flags.help) {
-      process.stdout.write(HELP);
+    if (!parsed.command) {
+      process.stdout.write(cliHelp(language));
       return;
     }
 
     if (parsed.command === "init" || parsed.command === "setup" || parsed.command === "update") {
       const projectRoot = resolveProjectPath(parsed.positionals[0] ?? ".");
       const applied = initProject(projectRoot, { rulesPath: parsed.flags.rules });
-      process.stdout.write(formatAppliedFixes(applied));
+      process.stdout.write(formatAppliedFixes(applied, { language }));
       return;
     }
 
     if (parsed.command === "audit") {
       const projectRoot = resolveProjectPath(parsed.positionals[0] ?? ".");
-      const report = auditProject(projectRoot, { rulesPath: parsed.flags.rules });
+      const report = auditProject(projectRoot, { rulesPath: parsed.flags.rules, language });
 
       if (parsed.flags.fix) {
         const applied = applyFixes(projectRoot, report);
-        const nextReport = auditProject(projectRoot, { rulesPath: parsed.flags.rules });
+        const nextReport = auditProject(projectRoot, { rulesPath: parsed.flags.rules, language });
         if (parsed.flags.json) {
           process.stdout.write(`${JSON.stringify({ applied, report: sanitizeReport(nextReport) }, null, 2)}\n`);
         } else {
-          process.stdout.write(formatAppliedFixes(applied));
+          process.stdout.write(formatAppliedFixes(applied, { language }));
           process.stdout.write("\n");
-          process.stdout.write(formatAuditReport(nextReport));
+          process.stdout.write(formatAuditReport(nextReport, { language }));
         }
         return;
       }
@@ -66,7 +54,7 @@ function main() {
       if (parsed.flags.json) {
         process.stdout.write(`${JSON.stringify(sanitizeReport(report), null, 2)}\n`);
       } else {
-        process.stdout.write(formatAuditReport(report));
+        process.stdout.write(formatAuditReport(report, { language }));
       }
       return;
     }
@@ -74,8 +62,8 @@ function main() {
     if (parsed.command === "prompt") {
       const projectRoot = resolveProjectPath(firstProjectArg(parsed.positionals) ?? ".");
       const request = parsed.flags.request ?? requestFromPositionals(parsed.positionals, projectRoot);
-      const report = auditProject(projectRoot, { rulesPath: parsed.flags.rules });
-      process.stdout.write(buildAgentPrompt(report, request));
+      const report = auditProject(projectRoot, { rulesPath: parsed.flags.rules, language });
+      process.stdout.write(buildAgentPrompt(report, request, { language }));
       return;
     }
 
@@ -88,12 +76,12 @@ function main() {
 
 function parseArgs(args) {
   const parsed = {
-    command: args[0],
+    command: null,
     flags: {},
     positionals: []
   };
 
-  for (let index = 1; index < args.length; index += 1) {
+  for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
     if (arg === "--help" || arg === "-h") {
       parsed.flags.help = true;
@@ -107,6 +95,11 @@ function parseArgs(args) {
       parsed.flags.json = true;
       continue;
     }
+    if (arg === "--lang") {
+      parsed.flags.lang = args[index + 1];
+      index += 1;
+      continue;
+    }
     if (arg === "--rules") {
       parsed.flags.rules = args[index + 1];
       index += 1;
@@ -117,7 +110,8 @@ function parseArgs(args) {
       index += 1;
       continue;
     }
-    parsed.positionals.push(arg);
+    if (!parsed.command) parsed.command = arg;
+    else parsed.positionals.push(arg);
   }
 
   return parsed;

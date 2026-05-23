@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Vibe-Guard</title>
+    <meta
+      name="description"
+      content="Vibe-Guard installs safety guardrails for AI coding agents before they edit a project."
+    >
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="Vibe-Guard home">
+        <span class="brand-mark" aria-hidden="true">VG</span>
+        <span>Vibe-Guard</span>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        <a href="#how" data-i18n="navHow">How it works</a>
+        <a href="#checks" data-i18n="navChecks">Checks</a>
+        <a href="#install" data-i18n="navInstall">Install</a>
+      </nav>
+      <div class="language" role="group" aria-label="Language">
+        <button class="language-button is-active" type="button" data-lang="en">EN</button>
+        <button class="language-button" type="button" data-lang="ko">KO</button>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow" data-i18n="eyebrow">Safety layer for AI coding agents</p>
+          <h1 data-i18n="heroTitle">Give your agent one link. Vibe-Guard handles the safety checks.</h1>
+          <p class="lead" data-i18n="heroLead">
+            Vibe-Guard installs project guardrails, fixes low-risk issues, and tells AI coding agents when to stop and ask.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="https://github.com/taehwandev/VibeGuard" data-i18n="githubButton">Open GitHub</a>
+            <a class="button secondary" href="#install" data-i18n="installButton">Use the link</a>
+          </div>
+        </div>
+        <div class="terminal" aria-label="Vibe-Guard command preview">
+          <div class="terminal-bar">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <pre><code data-i18n="terminal">$ npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard setup .
+
+Applied fixes:
+- Updated .gitignore env protection rules.
+- Created AGENTS.md Vibe-Guard instructions.
+
+[Vibe-Guard Audit Report]
+Overall: 🟢 Ready</code></pre>
+        </div>
+      </section>
+
+      <section class="band" id="how">
+        <div class="section-heading">
+          <p class="eyebrow" data-i18n="howEyebrow">Link-only workflow</p>
+          <h2 data-i18n="howTitle">The user should not need to understand the tool.</h2>
+        </div>
+        <div class="steps">
+          <article>
+            <strong>1</strong>
+            <h3 data-i18n="stepOneTitle">Paste the link</h3>
+            <p data-i18n="stepOneText">The user gives an AI coding agent the Vibe-Guard repository link.</p>
+          </article>
+          <article>
+            <strong>2</strong>
+            <h3 data-i18n="stepTwoTitle">Agent applies it</h3>
+            <p data-i18n="stepTwoText">The agent installs or refreshes guardrails in the current project.</p>
+          </article>
+          <article>
+            <strong>3</strong>
+            <h3 data-i18n="stepThreeTitle">Work continues safely</h3>
+            <p data-i18n="stepThreeText">Safe fixes run first, risky work stops for approval, and the original request continues.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="band checks" id="checks">
+        <div class="section-heading">
+          <p class="eyebrow" data-i18n="checksEyebrow">Default checks</p>
+          <h2 data-i18n="checksTitle">Built for common AI coding mistakes.</h2>
+        </div>
+        <div class="check-grid">
+          <div>
+            <span class="check-icon">S</span>
+            <h3 data-i18n="securityTitle">Secrets</h3>
+            <p data-i18n="securityText">Detects likely hard-coded secrets and never prints the values.</p>
+          </div>
+          <div>
+            <span class="check-icon">E</span>
+            <h3 data-i18n="envTitle">Env safety</h3>
+            <p data-i18n="envText">Protects local env files and keeps examples value-free.</p>
+          </div>
+          <div>
+            <span class="check-icon">D</span>
+            <h3 data-i18n="dataTitle">Data risk</h3>
+            <p data-i18n="dataText">Flags destructive scripts, migrations, and production actions.</p>
+          </div>
+          <div>
+            <span class="check-icon">C</span>
+            <h3 data-i18n="costTitle">Cost risk</h3>
+            <p data-i18n="costText">Warns when paid APIs or quota-based services need guardrails.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="install" id="install">
+        <div>
+          <p class="eyebrow" data-i18n="installEyebrow">Agent instruction</p>
+          <h2 data-i18n="installTitle">Use this sentence.</h2>
+        </div>
+        <div class="copy-block">
+          <code data-i18n="copyText">Apply https://github.com/taehwandev/VibeGuard to this project.</code>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Vibe-Guard</span>
+      <a href="https://github.com/taehwandev/VibeGuard" data-i18n="footerRepo">Repository</a>
+    </footer>
+
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>

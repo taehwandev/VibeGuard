@@ -5,9 +5,16 @@ const DEFAULT_RULE_DOCS = [
   "AGENTS.md",
   "index.md",
   "common/agent-operating-skill.md",
+  "common/llm-coding-discipline.md",
+  "common/code-conventions.md",
+  "common/verification-policy.md",
   "common/secure-development-baseline.md",
   "common/security-privacy-review.md",
-  "common/agent-editing-safety.md"
+  "common/agent-editing-safety.md",
+  "common/generated-files-policy.md",
+  "common/api-contract-compatibility.md",
+  "common/refactoring.md",
+  "common/server-side-caching.md"
 ];
 
 export function readConfig(projectRoot) {
@@ -68,4 +75,3 @@ function compactExcerpt(content) {
     .slice(0, 12)
     .join("\n");
 }
-

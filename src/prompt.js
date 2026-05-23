@@ -1,3 +1,4 @@
+import { normalizeLanguage, t } from "./i18n.js";
 import { sanitizePathForDisplay } from "./path-display.js";
 
 const STATUS_ICON = {
@@ -7,73 +8,75 @@ const STATUS_ICON = {
   info: "🔵"
 };
 
-const STATUS_LABEL = {
-  pass: "Ready",
-  warn: "Needs review",
-  block: "Blocked",
-  info: "Info"
-};
-
-export function buildAgentPrompt(report, userRequest = "") {
+export function buildAgentPrompt(report, userRequest = "", options = {}) {
+  const language = normalizeLanguage(options.language ?? report.language);
   const lines = [];
 
-  lines.push("# Vibe-Guard Safe Coding Prompt");
+  lines.push(t(language, "prompt.title"));
   lines.push("");
-  lines.push("You are an AI coding agent working safely on behalf of a non-developer user.");
-  lines.push("Prioritize automatic inspection and safe fixes over long explanations.");
+  lines.push(t(language, "prompt.intro1"));
+  lines.push(t(language, "prompt.intro2"));
   lines.push("");
-  lines.push("## User Request");
-  lines.push(userRequest?.trim() ? userRequest.trim() : "(No request was provided. First confirm the user's implementation goal in one sentence.)");
+  lines.push(t(language, "prompt.userRequest"));
+  lines.push(userRequest?.trim() ? userRequest.trim() : t(language, "prompt.noRequest"));
   lines.push("");
-  lines.push("## Current Audit Status");
-  lines.push(`- Project: ${sanitizePathForDisplay(report.root)}`);
-  lines.push(`- Overall: ${STATUS_ICON[report.summary.status]} ${STATUS_LABEL[report.summary.status]}`);
-  lines.push(`- Blocks: ${report.summary.blocks}, warnings: ${report.summary.warnings}, fixable: ${report.summary.fixable}`);
+  lines.push(t(language, "prompt.auditStatus"));
+  lines.push(`- ${t(language, "prompt.project")}: ${sanitizePathForDisplay(report.root)}`);
+  lines.push(`- ${t(language, "prompt.overall")}: ${STATUS_ICON[report.summary.status]} ${statusLabel(language, report.summary.status)}`);
+  lines.push(`- ${t(language, "prompt.summary", {
+    blocks: report.summary.blocks,
+    warnings: report.summary.warnings,
+    fixable: report.summary.fixable
+  })}`);
   lines.push("");
-  lines.push("| Gate | Status | Message |");
+  lines.push(`| ${t(language, "report.table.gate")} | ${t(language, "report.table.status")} | ${t(language, "report.table.message")} |`);
   lines.push("| --- | --- | --- |");
   for (const gate of Object.values(report.gates)) {
-    lines.push(`| ${gate.label} | ${STATUS_ICON[gate.status]} ${STATUS_LABEL[gate.status]} | ${gate.message} |`);
+    lines.push(`| ${gate.label} | ${STATUS_ICON[gate.status]} ${statusLabel(language, gate.status)} | ${gate.message} |`);
   }
 
   if (report.findings.length > 0) {
     lines.push("");
-    lines.push("## Findings To Handle");
+    lines.push(t(language, "prompt.findings"));
     for (const finding of report.findings.slice(0, 12)) {
       const where = finding.file ? `${finding.file}${finding.line ? `:${finding.line}` : ""}` : "project";
       lines.push(`- ${STATUS_ICON[finding.severity] ?? "🔵"} ${where}: ${finding.message}`);
-      if (finding.fixable) lines.push("  - Fixable: run `vibe-guard audit . --fix` or apply the same safe remediation directly.");
+      if (finding.fixable) lines.push(`  - ${t(language, "prompt.fixable")}`);
     }
   }
 
   lines.push("");
-  lines.push("## Agent Execution Rules");
-  lines.push("1. Before writing code, inspect the file structure, `.gitignore`, env files, and package/script setup.");
-  lines.push("2. If you find a secret value, do not print it. Move it to an ignored env file or secret manager.");
-  lines.push("3. Ignore `.env`, `.env.*`, and `.env.vibeguard.local`; keep only variable names in `.env.example`.");
-  lines.push("4. Do not delete databases, run migrations, deploy to production, or increase paid API/model usage without user approval.");
-  lines.push("5. Ask questions only when blocked, limit them to three, and perform safe fixes first when possible.");
-  lines.push("6. After editing, run tests, build, typecheck, or the narrowest useful smoke check.");
-  lines.push("7. Finish with a short report of changed files, verification results, and remaining risks.");
+  lines.push(t(language, "prompt.rules"));
+  lines.push(`1. ${t(language, "prompt.rule1")}`);
+  lines.push(`2. ${t(language, "prompt.rule2")}`);
+  lines.push(`3. ${t(language, "prompt.rule3")}`);
+  lines.push(`4. ${t(language, "prompt.rule4")}`);
+  lines.push(`5. ${t(language, "prompt.rule5")}`);
+  lines.push(`6. ${t(language, "prompt.rule6")}`);
+  lines.push(`7. ${t(language, "prompt.rule7")}`);
 
   if (report.rules.available) {
     lines.push("");
-    lines.push("## External Rule Library");
-    lines.push(`Path: ${sanitizePathForDisplay(report.rules.path)}`);
+    lines.push(t(language, "prompt.externalRules"));
+    lines.push(`${t(language, "prompt.path")}: ${sanitizePathForDisplay(report.rules.path)}`);
     for (const doc of report.rules.documents.slice(0, 6)) {
       lines.push(`- ${doc.relative}: ${doc.title}`);
     }
   }
 
   lines.push("");
-  lines.push("## Next Action");
+  lines.push(t(language, "prompt.nextAction"));
   if (report.summary.fixable > 0) {
-    lines.push("Handle fixable safety issues first, then implement the user request.");
+    lines.push(t(language, "prompt.nextFixable"));
   } else if (report.summary.blocks > 0) {
-    lines.push("Do not start feature implementation until blocking issues are resolved safely.");
+    lines.push(t(language, "prompt.nextBlocked"));
   } else {
-    lines.push("Implement the user request in small changes while following the rules above.");
+    lines.push(t(language, "prompt.nextReady"));
   }
 
   return `${lines.join("\n")}\n`;
+}
+
+function statusLabel(language, status) {
+  return t(language, `status.${status}`);
 }

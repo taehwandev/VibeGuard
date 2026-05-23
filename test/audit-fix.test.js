@@ -5,8 +5,10 @@ import path from "node:path";
 import test from "node:test";
 import { auditProject, sanitizeReport } from "../src/audit.js";
 import { applyFixes } from "../src/fix.js";
+import { formatAuditReport } from "../src/format.js";
 import { initProject } from "../src/init.js";
 import { buildAgentPrompt } from "../src/prompt.js";
+import { loadRuleLibrary } from "../src/rules.js";
 
 test("audit detects and fixes a hard-coded JavaScript secret without exposing it in reports", () => {
   const root = makeTempProject();
@@ -92,6 +94,69 @@ test("prompt includes actionable guardrails", () => {
   assert.match(prompt, /Add checkout/);
   assert.match(prompt, /If you find a secret value, do not print it/);
   assert.match(prompt, /Do not delete databases, run migrations, deploy to production/);
+});
+
+test("audit report and prompt support Korean localization", () => {
+  const root = makeTempProject();
+  initProject(root);
+  const report = auditProject(root, { language: "ko" });
+
+  assert.equal(report.language, "ko");
+  assert.equal(report.gates.security.label, "보안");
+
+  const formatted = formatAuditReport(report, { language: "ko" });
+  assert.match(formatted, /전체 상태/);
+  assert.match(formatted, /발견사항: 없음/);
+
+  const prompt = buildAgentPrompt(report, "로그인 추가", { language: "ko" });
+  assert.match(prompt, /사용자 요청/);
+  assert.match(prompt, /비밀값을 발견하면 값을 출력하지 마세요/);
+});
+
+test("rule library loads core safety and engineering cards when available", () => {
+  const root = makeTempProject();
+  const rulesRoot = path.join(root, "rules");
+  const commonRoot = path.join(rulesRoot, "common");
+  fs.mkdirSync(commonRoot, { recursive: true });
+
+  for (const relative of [
+    "AGENTS.md",
+    "index.md",
+    "common/agent-operating-skill.md",
+    "common/llm-coding-discipline.md",
+    "common/code-conventions.md",
+    "common/verification-policy.md",
+    "common/secure-development-baseline.md",
+    "common/security-privacy-review.md",
+    "common/agent-editing-safety.md",
+    "common/generated-files-policy.md",
+    "common/api-contract-compatibility.md",
+    "common/refactoring.md",
+    "common/server-side-caching.md"
+  ]) {
+    const filePath = path.join(rulesRoot, relative);
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, `# ${relative}\n\nReusable rule card.\n`, "utf8");
+  }
+
+  const library = loadRuleLibrary(root, rulesRoot);
+  const loaded = library.documents.map((doc) => doc.relative);
+
+  assert.deepEqual(loaded, [
+    "AGENTS.md",
+    "index.md",
+    "common/agent-operating-skill.md",
+    "common/llm-coding-discipline.md",
+    "common/code-conventions.md",
+    "common/verification-policy.md",
+    "common/secure-development-baseline.md",
+    "common/security-privacy-review.md",
+    "common/agent-editing-safety.md",
+    "common/generated-files-policy.md",
+    "common/api-contract-compatibility.md",
+    "common/refactoring.md",
+    "common/server-side-caching.md"
+  ]);
 });
 
 test("init updates only the managed Vibe-Guard agent instruction block", () => {

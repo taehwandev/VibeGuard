@@ -9,6 +9,7 @@ import {
   readTextIfExists,
   relativePath
 } from "./fs-utils.js";
+import { normalizeLanguage, t } from "./i18n.js";
 import { loadRuleLibrary } from "./rules.js";
 
 const IGNORE_DIRS = new Set([
@@ -54,22 +55,24 @@ const PAID_INTEGRATION_HINTS = [
 
 export function auditProject(projectPath, options = {}) {
   const root = path.resolve(projectPath);
+  const language = normalizeLanguage(options.language ?? options.lang);
   if (!pathExists(root)) {
     throw new Error(`Project path does not exist: ${root}`);
   }
 
   const report = {
     root,
+    language,
     generatedAt: new Date().toISOString(),
     project: detectProject(root),
     rules: loadRuleLibrary(root, options.rulesPath),
     findings: [],
     gates: {
-      security: gate("Security", "pass", "No blocking secret issues found"),
-      cost: gate("Cost", "pass", "No immediate cost spike signals found"),
-      data: gate("Data", "pass", "No data-loss operation signals found"),
-      structure: gate("Structure", "pass", "No immediate structural blockers found"),
-      environment: gate("Environment", "pass", "Basic project environment signals found")
+      security: gate(t(language, "gate.security.label"), "pass", t(language, "gate.security.pass")),
+      cost: gate(t(language, "gate.cost.label"), "pass", t(language, "gate.cost.pass")),
+      data: gate(t(language, "gate.data.label"), "pass", t(language, "gate.data.pass")),
+      structure: gate(t(language, "gate.structure.label"), "pass", t(language, "gate.structure.pass")),
+      environment: gate(t(language, "gate.environment.label"), "pass", t(language, "gate.environment.pass"))
     },
     stats: {
       scannedFiles: 0,
@@ -153,12 +156,13 @@ function detectProject(root) {
 }
 
 function checkProjectBasics(root, report) {
+  const language = report.language;
   if (!pathExists(path.join(root, ".git"))) {
     addFinding(report, {
       severity: "warn",
       category: "environment",
-      message: "This is not a Git repository. Change tracking is limited before automatic fixes.",
-      recommendation: "Run `git init` first, or use Vibe-Guard only in a backup-friendly experiment project."
+      message: t(language, "finding.notGit.message"),
+      recommendation: t(language, "finding.notGit.recommendation")
     });
   }
 
@@ -168,13 +172,14 @@ function checkProjectBasics(root, report) {
       category: "environment",
       fixable: true,
       action: "init-policy",
-      message: "VIBEGUARD.md is missing.",
-      recommendation: "Run `vibe-guard init` to create the project safety policy."
+      message: t(language, "finding.missingPolicy.message"),
+      recommendation: t(language, "finding.missingPolicy.recommendation")
     });
   }
 }
 
 function checkEnvSafety(root, report) {
+  const language = report.language;
   const rootEntries = fs.readdirSync(root);
   const envFiles = rootEntries.filter((name) => name === ".env" || (name.startsWith(".env.") && name !== ".env.example"));
   const gitignorePath = path.join(root, ".gitignore");
@@ -186,8 +191,8 @@ function checkEnvSafety(root, report) {
       category: "security",
       fixable: true,
       action: "env-gitignore",
-      message: ".gitignore is missing, so local secret files may be committed.",
-      recommendation: "Run `vibe-guard audit --fix` to create safe env ignore rules."
+      message: t(language, "finding.missingGitignore.message"),
+      recommendation: t(language, "finding.missingGitignore.recommendation")
     });
     return;
   }
@@ -199,8 +204,8 @@ function checkEnvSafety(root, report) {
       fixable: true,
       action: "env-gitignore",
       file: ".gitignore",
-      message: ".gitignore does not fully protect local env files.",
-      recommendation: "Run `vibe-guard audit --fix` to add `.env`, `.env.*`, and `!.env.example` rules."
+      message: t(language, "finding.envProtection.message"),
+      recommendation: t(language, "finding.envProtection.recommendation")
     });
   }
 
@@ -210,8 +215,8 @@ function checkEnvSafety(root, report) {
       category: "security",
       fixable: true,
       action: "env-example",
-      message: ".env.example is missing, so required env variable names are hard to share safely.",
-      recommendation: "Run `vibe-guard audit --fix` to create a value-free example env file."
+      message: t(language, "finding.missingEnvExample.message"),
+      recommendation: t(language, "finding.missingEnvExample.recommendation")
     });
   }
 }
@@ -222,16 +227,17 @@ function hasEnvIgnoreProtection(gitignore) {
 }
 
 function checkPackageScripts(root, report) {
+  const language = report.language;
   const packageJsonPath = path.join(root, "package.json");
   const packageJson = readJsonIfExists(packageJsonPath);
   if (!packageJson?.scripts) return;
 
   const riskyPatterns = [
-    { label: "force delete", kind: "destructive", regex: /\brm\s+-rf\b/ },
-    { label: "production deploy", kind: "environment", regex: /\b(vercel|netlify|firebase)\b.*\b(--prod|deploy)\b/ },
-    { label: "database reset", kind: "data", regex: /\b(prisma\s+migrate\s+reset|dropdb|sequelize\s+db:drop)\b/ },
-    { label: "accepted data loss", kind: "data", regex: /\b--accept-data-loss\b/ },
-    { label: "SQL delete", kind: "data", regex: /\bDROP\s+(TABLE|DATABASE|SCHEMA)\b/i }
+    { labelKey: "risk.forceDelete", kind: "destructive", regex: /\brm\s+-rf\b/ },
+    { labelKey: "risk.productionDeploy", kind: "environment", regex: /\b(vercel|netlify|firebase)\b.*\b(--prod|deploy)\b/ },
+    { labelKey: "risk.databaseReset", kind: "data", regex: /\b(prisma\s+migrate\s+reset|dropdb|sequelize\s+db:drop)\b/ },
+    { labelKey: "risk.acceptedDataLoss", kind: "data", regex: /\b--accept-data-loss\b/ },
+    { labelKey: "risk.sqlDelete", kind: "data", regex: /\bDROP\s+(TABLE|DATABASE|SCHEMA)\b/i }
   ];
 
   for (const [name, command] of Object.entries(packageJson.scripts)) {
@@ -241,14 +247,15 @@ function checkPackageScripts(root, report) {
         severity: pattern.kind === "data" || pattern.kind === "destructive" ? "block" : "warn",
         category: pattern.kind === "data" ? "data" : "environment",
         file: "package.json",
-        message: `Risky script detected: ${name} (${pattern.label})`,
-        recommendation: "Require explicit approval, backup status, and staging context before any AI agent runs this script."
+        message: t(language, "finding.riskyScript.message", { name, label: t(language, pattern.labelKey) }),
+        recommendation: t(language, "finding.riskyScript.recommendation")
       });
     }
   }
 }
 
 function checkPaidIntegrations(root, report) {
+  const language = report.language;
   const packageJson = readJsonIfExists(path.join(root, "package.json"));
   if (!packageJson) return;
 
@@ -268,8 +275,8 @@ function checkPaidIntegrations(root, report) {
     severity: "warn",
     category: "cost",
     file: "package.json",
-    message: `Paid or quota-based service dependency detected: ${found.slice(0, 5).join(", ")}`,
-    recommendation: "Confirm budget limits, request limits, and separation between test and production keys."
+    message: t(language, "finding.paidDependency.message", { dependencies: found.slice(0, 5).join(", ") }),
+    recommendation: t(language, "finding.paidDependency.recommendation")
   });
 }
 
@@ -299,8 +306,8 @@ function checkFiles(root, report, options) {
         severity: lineCount > maxFileLines * 2 ? "block" : "warn",
         category: "structure",
         file: relative,
-        message: `File has ${lineCount} lines, which is too large for low-risk AI editing.`,
-        recommendation: "Require a module split or a small-step implementation plan before adding new behavior."
+        message: t(report.language, "finding.largeFile.message", { lineCount }),
+        recommendation: t(report.language, "finding.largeFile.recommendation")
       });
     }
 
@@ -333,8 +340,8 @@ function scanSecretAssignments(root, filePath, content, report) {
         line: lineNumberAt(content, match.index),
         fixable: true,
         action: "secret-quarantine",
-        message: `Possible hard-coded secret assignment detected: ${toEnvName(name)}`,
-        recommendation: "Run `vibe-guard audit --fix` to move the value into an ignored env file and read it from the environment.",
+        message: t(report.language, "finding.secretAssignment.message", { envName: toEnvName(name) }),
+        recommendation: t(report.language, "finding.secretAssignment.recommendation"),
         evidence: `${name}=<redacted>`,
         fix: {
           type: "secret-env",
@@ -387,8 +394,8 @@ function scanKnownSecretValues(root, filePath, content, report) {
         category: "security",
         file: relative,
         line: lineNumberAt(content, match.index),
-        message: `Possible ${pattern.label} found in a file.`,
-        recommendation: "Do not print the value. Move it to env or a secret manager immediately. Rotate the key if it may have been shared.",
+        message: t(report.language, "finding.knownSecret.message", { label: pattern.label }),
+        recommendation: t(report.language, "finding.knownSecret.recommendation"),
         evidence: "<redacted>"
       });
     }
