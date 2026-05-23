@@ -55,6 +55,7 @@ export function updateCheckStatus(projectRoot, config = {}, now = new Date()) {
     return {
       due: true,
       disabled: false,
+      reason: "missing-state",
       checkIntervalDays: settings.checkIntervalDays,
       ageDays: "unknown"
     };
@@ -65,6 +66,7 @@ export function updateCheckStatus(projectRoot, config = {}, now = new Date()) {
   return {
     due: ageMs >= settings.checkIntervalDays * DAY_MS,
     disabled: false,
+    reason: "stale-state",
     checkIntervalDays: settings.checkIntervalDays,
     ageDays
   };
@@ -77,7 +79,7 @@ export function staleUpdateFinding(projectRoot, config = {}, options = {}) {
   if (!status.due) return null;
 
   return {
-    severity: "warn",
+    severity: status.reason === "missing-state" ? "info" : "warn",
     category: "environment",
     action: "update-vibeguard",
     message: t(options.language, "finding.staleUpdate.message", {

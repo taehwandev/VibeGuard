@@ -157,6 +157,17 @@ test("audit warns when VibeGuard update check state is stale", () => {
   assert.equal(report.summary.blocks, 0);
 });
 
+test("audit treats missing VibeGuard update check state as informational", () => {
+  const root = makeTempProject();
+  initProject(root);
+  fs.rmSync(path.join(root, ".vibeguard", "update-state.json"));
+
+  const report = auditProject(root);
+  const finding = report.findings.find((item) => item.action === "update-vibeguard");
+  assert.equal(finding?.severity, "info");
+  assert.equal(report.summary.warnings, 0);
+});
+
 test("init preserves existing shell hooks while adding VibeGuard checks", () => {
   const root = makeTempProject();
   const hooksRoot = path.join(root, ".git", "hooks");
