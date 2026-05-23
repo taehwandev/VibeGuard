@@ -35,3 +35,15 @@ agents.
 - Run `node src/cli.js audit . --strict` before committing or pushing release
   changes.
 - Run `npm pack --dry-run` before package publication changes.
+
+## AgentPlaybook Routing
+
+- Keep VibeGuard as the safety gate for secrets, cost, data, deployment, and
+  repository risk.
+- Use AgentPlaybook only as the external execution playbook for planning,
+  implementation, verification, review, and handoff.
+- Local AgentPlaybook path: `~/Documents/KeyFlowVault/AgentPlaybook`.
+- Do not clone or download AgentPlaybook from this repo's instructions. If the
+  local path is missing, ask the user for the existing managed copy location.
+- Do not merge, vendor, or copy AgentPlaybook content into this repo. If rules
+  conflict, this `AGENTS.md` and `VIBEGUARD.md` take precedence.

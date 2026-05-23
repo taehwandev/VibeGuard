@@ -1,0 +1,14 @@
+{
+  "mode": "guided",
+  "display": "traffic-light",
+  "rulesPath": "~/Documents/KeyFlowVault/AgentPlaybook",
+  "maxFileLines": 800,
+  "repository": {
+    "visibility": "public"
+  },
+  "autoFix": {
+    "envGitignore": true,
+    "envExample": true,
+    "simpleSecretQuarantine": true
+  }
+}
