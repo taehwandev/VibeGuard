@@ -16,7 +16,7 @@ const CLI_PATH = new URL("../src/cli.js", import.meta.url);
 
 test("audit detects and fixes a hard-coded JavaScript secret without exposing it in reports", () => {
   const root = makeTempProject();
-  const secretValue = ["realistic", "private", "value", "123456789012"].join("_");
+  const secretValue = `sk-proj-${"a".repeat(24)}${"1".repeat(12)}`;
   fs.writeFileSync(path.join(root, "app.js"), `const openaiApiKey = "${secretValue}";\n`, "utf8");
 
   const report = auditProject(root);
@@ -46,7 +46,7 @@ test("audit detects and fixes a hard-coded JavaScript secret without exposing it
 
 test("fix adds os import and environment reads for Python assignments", () => {
   const root = makeTempProject();
-  const secretValue = ["python", "private", "token", "123456789012"].join("_");
+  const secretValue = `ghp_${"a".repeat(24)}${"1".repeat(12)}`;
   fs.writeFileSync(path.join(root, "settings.py"), `API_TOKEN = "${secretValue}"\n`, "utf8");
 
   const report = auditProject(root);
@@ -63,22 +63,88 @@ test("init creates project policy and config", () => {
 
   assert.ok(applied.includes("Created .vibeguard.json."));
   assert.ok(applied.includes("Created VIBEGUARD.md."));
-  assert.ok(applied.includes("Created AGENTS.md Vibe-Guard instructions."));
+  assert.ok(applied.includes("Created AGENTS.md VibeGuard instructions."));
+  assert.ok(applied.includes("Installed pre-commit VibeGuard hook."));
+  assert.ok(applied.includes("Installed pre-push VibeGuard hook."));
   assert.ok(fs.existsSync(path.join(root, ".vibeguard.json")));
   assert.ok(fs.existsSync(path.join(root, "VIBEGUARD.md")));
   assert.ok(fs.existsSync(path.join(root, "AGENTS.md")));
+  assert.ok(fs.existsSync(path.join(root, ".git", "hooks", "pre-commit")));
+  assert.ok(fs.existsSync(path.join(root, ".git", "hooks", "pre-push")));
 
   const agentInstructions = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");
-  assert.match(agentInstructions, /<!-- vibe-guard:start version=1 -->/);
+  assert.match(agentInstructions, /<!-- vibeguard:start version=1 -->/);
   assert.match(agentInstructions, /Keep VibeGuard scoped to guardrails/);
   assert.match(agentInstructions, /Preserve existing repo-local instructions/);
+  assert.match(agentInstructions, /Before creating a commit, run `vibeguard audit \.`/);
+  assert.match(agentInstructions, /Keep secrets server-side/);
+  assert.match(agentInstructions, /Prefer cost-aware architecture/);
+  assert.match(agentInstructions, /commonize repeated API\/model\/provider calls/);
   assert.match(
     agentInstructions,
-    /npm --no-update-notifier exec --yes --package github:taehwandev\/VibeGuard -- vibe-guard audit \./
+    /npx --yes vibeguard audit \./
   );
 
+  const preCommit = fs.readFileSync(path.join(root, ".git", "hooks", "pre-commit"), "utf8");
+  const prePush = fs.readFileSync(path.join(root, ".git", "hooks", "pre-push"), "utf8");
+  assert.match(preCommit, /# vibeguard:start version=1/);
+  assert.match(preCommit, /vibeguard audit \./);
+  assert.doesNotMatch(preCommit, /--strict/);
+  assert.match(prePush, /# vibeguard:start version=1/);
+  assert.match(prePush, /vibeguard audit \. --strict/);
+  assert.equal((fs.statSync(path.join(root, ".git", "hooks", "pre-commit")).mode & 0o111) > 0, true);
+
   const config = JSON.parse(fs.readFileSync(path.join(root, ".vibeguard.json"), "utf8"));
+  assert.equal(config.mode, "guided");
+  assert.equal(config.display, "traffic-light");
   assert.equal(config.rulesPath, null);
+  assert.equal(config.maxFileLines, 800);
+});
+
+test("audit reads developer tuning from .vibeguard.json", () => {
+  const root = makeTempProject();
+  initProject(root);
+  fs.writeFileSync(
+    path.join(root, ".vibeguard.json"),
+    `${JSON.stringify({ mode: "developer", display: "traffic-light", maxFileLines: 2 }, null, 2)}\n`,
+    "utf8"
+  );
+  fs.writeFileSync(path.join(root, "small.js"), ["one", "two", "three"].join("\n"), "utf8");
+
+  const report = auditProject(root);
+  assert.equal(report.mode, "developer");
+  assert.equal(report.display, "traffic-light");
+  assert.equal(report.findings.some((finding) => finding.file === "small.js" && finding.category === "structure"), true);
+});
+
+test("init preserves existing shell hooks while adding VibeGuard checks", () => {
+  const root = makeTempProject();
+  const hooksRoot = path.join(root, ".git", "hooks");
+  fs.mkdirSync(hooksRoot, { recursive: true });
+  fs.writeFileSync(path.join(hooksRoot, "pre-commit"), "#!/bin/sh\necho existing hook\n", "utf8");
+
+  const applied = initProject(root);
+  assert.ok(applied.includes("Added VibeGuard check to existing pre-commit hook."));
+
+  const preCommit = fs.readFileSync(path.join(hooksRoot, "pre-commit"), "utf8");
+  assert.match(preCommit, /echo existing hook/);
+  assert.match(preCommit, /# vibeguard:start version=1/);
+});
+
+test("init wraps existing non-shell hooks instead of overwriting them", () => {
+  const root = makeTempProject();
+  const hooksRoot = path.join(root, ".git", "hooks");
+  fs.mkdirSync(hooksRoot, { recursive: true });
+  fs.writeFileSync(path.join(hooksRoot, "pre-push"), "#!/usr/bin/env node\nconsole.log('existing hook');\n", "utf8");
+
+  const applied = initProject(root);
+  assert.ok(applied.includes("Wrapped existing pre-push hook with VibeGuard check."));
+
+  const prePush = fs.readFileSync(path.join(hooksRoot, "pre-push"), "utf8");
+  const original = fs.readFileSync(path.join(hooksRoot, "pre-push.vibeguard-original"), "utf8");
+  assert.match(prePush, /# vibeguard:start version=1/);
+  assert.match(prePush, /vibeguard-original/);
+  assert.match(original, /existing hook/);
 });
 
 test("fix creates env example names from existing local env files", () => {
@@ -103,11 +169,68 @@ test("prompt includes actionable guardrails", () => {
   assert.match(prompt, /Add checkout/);
   assert.match(prompt, /If you find a secret value, do not print it/);
   assert.match(prompt, /Do not delete databases, run migrations, deploy to production/);
+  assert.match(prompt, /do not claim verification that was not observed/);
+  assert.match(prompt, /Prefer cost-aware architecture/);
+  assert.match(prompt, /commonize repeated API\/model\/provider calls/);
+});
+
+test("audit avoids descriptive sensitive-name false positives", () => {
+  const root = makeTempProject();
+  initProject(root);
+  fs.writeFileSync(
+    path.join(root, "utils.js"),
+    [
+      'const tokenizer = "GPT-4 tokenizer for text processing";',
+      'const apiKeyFormat = "API keys should start with sk-";',
+      'const secretManagerPath = "/aws/secretsmanager/prod/database";',
+      'const passwordPolicy = "Password must be at least 12 chars";',
+      'const privateKeyDescription = "RSA keys in /etc/ssl";',
+      'const retryToken = "exponential-backoff-retry-v2";'
+    ].join("\n"),
+    "utf8"
+  );
+
+  const report = auditProject(root);
+  assert.equal(report.findings.some((finding) => finding.action === "secret-quarantine"), false);
+  assert.equal(report.findings.some((finding) => finding.severity === "block"), false);
+});
+
+test("audit warns on generic high-entropy sensitive assignments without auto-quarantine", () => {
+  const root = makeTempProject();
+  initProject(root);
+  const suspiciousValue = "A7f9K2mP8qR4sT6vW9xY1zB3cD5eF";
+  fs.writeFileSync(path.join(root, "service.js"), `const serviceToken = "${suspiciousValue}";\n`, "utf8");
+
+  const report = auditProject(root);
+  const finding = report.findings.find((item) => item.evidence === "serviceToken=<redacted>");
+  assert.equal(report.summary.blocks, 0);
+  assert.equal(finding?.severity, "warn");
+  assert.equal(finding?.fixable, false);
+  assert.equal(finding?.action, undefined);
+  assert.equal(JSON.stringify(sanitizeReport(report)).includes(suspiciousValue), false);
+
+  const defaultRun = runCli(["audit", root, "--json"]);
+  assert.equal(defaultRun.status, 0);
+  assert.match(defaultRun.stdout, /"status": "warn"/);
+
+  const strictRun = runCli(["audit", root, "--json", "--strict"]);
+  assert.equal(strictRun.status, 1);
+  assert.match(strictRun.stdout, /"status": "warn"/);
+});
+
+test("audit blocks database connection strings without exposing values", () => {
+  const root = makeTempProject();
+  const databaseUrl = ["postgres://admin", "generated-password-123@prod.db.company.com/main"].join(":");
+  fs.writeFileSync(path.join(root, "config.yaml"), `database:\n  url: "${databaseUrl}"\n`, "utf8");
+
+  const report = auditProject(root);
+  assert.equal(report.findings.some((finding) => finding.message.includes("database connection string")), true);
+  assert.equal(JSON.stringify(sanitizeReport(report)).includes("generated-password-123"), false);
 });
 
 test("audit exits non-zero for blocked reports and strict warnings", () => {
   const blockedRoot = makeTempProject();
-  const secretValue = ["blocked", "private", "value", "123456789012"].join("_");
+  const secretValue = `sk-proj-${"b".repeat(24)}${"2".repeat(12)}`;
   fs.writeFileSync(path.join(blockedRoot, "app.js"), `const apiToken = "${secretValue}";\n`, "utf8");
 
   const blocked = runCli(["audit", blockedRoot, "--json"]);
@@ -121,6 +244,107 @@ test("audit exits non-zero for blocked reports and strict warnings", () => {
   const strictWarning = runCli(["audit", warningRoot, "--json", "--strict"]);
   assert.equal(strictWarning.status, 1);
   assert.match(strictWarning.stdout, /"status": "warn"/);
+});
+
+test("evidence records Claude hook command execution without leaking secrets", () => {
+  const root = makeTempProject();
+  const secretValue = `sk-proj-${"c".repeat(24)}${"3".repeat(12)}`;
+  const hookInput = {
+    cwd: root,
+    hook_event_name: "PostToolUse",
+    tool_name: "Bash",
+    tool_input: {
+      command: `npm test && echo ${secretValue}`
+    },
+    tool_use_id: "toolu_test",
+    duration_ms: 42
+  };
+
+  const recorded = runCli(["evidence", "claude-hook", root, "--json"], {
+    input: JSON.stringify(hookInput)
+  });
+  assert.equal(recorded.status, 0);
+  assert.equal(recorded.stdout.includes(secretValue), false);
+  assert.match(recorded.stdout, /"agent": "claude-code"/);
+
+  const evidenceFile = fs.readFileSync(path.join(root, ".vibeguard", "session", "events.jsonl"), "utf8");
+  assert.equal(evidenceFile.includes(secretValue), false);
+  assert.match(evidenceFile, /<redacted>/);
+
+  const summary = runCli(["evidence", root, "--json"]);
+  assert.equal(summary.status, 0);
+  const parsed = JSON.parse(summary.stdout);
+  assert.equal(parsed.commandCount, 1);
+  assert.equal(parsed.checks.test.observed, true);
+});
+
+test("evidence records Claude hook failures and extracts exit code", () => {
+  const root = makeTempProject();
+  const hookInput = {
+    cwd: root,
+    hook_event_name: "PostToolUseFailure",
+    tool_name: "Bash",
+    tool_input: {
+      command: "npm test"
+    },
+    error: "Command exited with non-zero status code 1"
+  };
+
+  const recorded = runCli(["evidence", "claude-hook", root, "--json"], {
+    input: JSON.stringify(hookInput)
+  });
+  assert.equal(recorded.status, 0);
+
+  const parsed = JSON.parse(recorded.stdout);
+  assert.equal(parsed.status, "failure");
+  assert.equal(parsed.exitCode, 1);
+});
+
+test("evidence installs Claude Code local hook idempotently", () => {
+  const root = makeTempProject();
+  const settingsPath = path.join(root, ".claude", "settings.local.json");
+  fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
+  fs.writeFileSync(
+    settingsPath,
+    `${JSON.stringify(
+      {
+        permissions: {
+          allow: ["Bash(npm test)"]
+        },
+        hooks: {
+          PostToolUse: [
+            {
+              matcher: "Edit|Write",
+              hooks: [{ type: "command", command: "npm test" }]
+            }
+          ]
+        }
+      },
+      null,
+      2
+    )}\n`,
+    "utf8"
+  );
+
+  const installed = runCli(["evidence", "install-claude-hook", root, "--json"]);
+  assert.equal(installed.status, 0);
+  const result = JSON.parse(installed.stdout);
+  assert.deepEqual(result.events, ["PostToolUse", "PostToolUseFailure"]);
+  assert.match(result.command, /npx --yes vibeguard evidence claude-hook/);
+
+  const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+  assert.deepEqual(settings.permissions.allow, ["Bash(npm test)"]);
+  assert.equal(settings.hooks.PostToolUse.some((group) => group.matcher === "Edit|Write"), true);
+  assert.equal(countClaudeEvidenceHooks(settings), 2);
+
+  const gitignore = fs.readFileSync(path.join(root, ".gitignore"), "utf8");
+  assert.match(gitignore, /^\.claude\/settings\.local\.json$/m);
+  assert.match(gitignore, /^\.vibeguard\/session\/$/m);
+
+  const reinstalled = runCli(["evidence", "install-claude-hook", root, "--json"]);
+  assert.equal(reinstalled.status, 0);
+  const settingsAfterSecondRun = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+  assert.equal(countClaudeEvidenceHooks(settingsAfterSecondRun), 2);
 });
 
 test("audit report and prompt support Korean localization", () => {
@@ -186,7 +410,7 @@ test("rule library loads core safety and engineering cards when available", () =
   ]);
 });
 
-test("init updates only the managed Vibe-Guard agent instruction block", () => {
+test("init updates only the managed VibeGuard agent instruction block", () => {
   const root = makeTempProject();
   fs.writeFileSync(
     path.join(root, "AGENTS.md"),
@@ -205,12 +429,12 @@ test("init updates only the managed Vibe-Guard agent instruction block", () => {
   );
 
   const applied = initProject(root);
-  assert.ok(applied.includes("Updated AGENTS.md Vibe-Guard instructions."));
+  assert.ok(applied.includes("Updated AGENTS.md VibeGuard instructions."));
 
   const agentInstructions = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");
   assert.match(agentInstructions, /Keep this project-specific note\./);
   assert.match(agentInstructions, /Keep this footer\./);
-  assert.match(agentInstructions, /<!-- vibe-guard:start version=1 -->/);
+  assert.match(agentInstructions, /<!-- vibeguard:start version=1 -->/);
   assert.doesNotMatch(agentInstructions, /old instructions/);
 });
 
@@ -229,13 +453,21 @@ test("release version uses ISO week and weekly release count", () => {
 });
 
 function makeTempProject() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "vibe-guard-test-"));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "vibeguard-test-"));
   fs.mkdirSync(path.join(root, ".git"));
   return root;
 }
 
-function runCli(args) {
+function runCli(args, options = {}) {
   return spawnSync(process.execPath, [CLI_PATH.pathname, ...args], {
-    encoding: "utf8"
+    encoding: "utf8",
+    input: options.input
   });
+}
+
+function countClaudeEvidenceHooks(settings) {
+  return Object.values(settings.hooks)
+    .flat()
+    .flatMap((group) => group.hooks)
+    .filter((hook) => /\bvibeguard\s+evidence\s+claude-hook\b/.test(hook.command)).length;
 }

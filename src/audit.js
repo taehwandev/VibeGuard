@@ -35,6 +35,10 @@ const KNOWN_SECRET_PATTERNS = [
   { label: "Stripe live secret key", regex: /\bsk_live_[A-Za-z0-9]{20,}\b/g },
   { label: "AWS access key", regex: /\bAKIA[0-9A-Z]{16}\b/g },
   { label: "Slack token", regex: /\bxox[baprs]-[A-Za-z0-9-]{20,}\b/g },
+  {
+    label: "database connection string",
+    regex: /\b(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|redis(?:s)?)?:\/\/[^:\s"'`]+:[^@\s"'`]+@[^\s"'`]+/g
+  },
   { label: "Private key header", regex: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/g }
 ];
 
@@ -55,17 +59,23 @@ const PAID_INTEGRATION_HINTS = [
 
 export function auditProject(projectPath, options = {}) {
   const root = path.resolve(projectPath);
-  const language = normalizeLanguage(options.language ?? options.lang);
   if (!pathExists(root)) {
     throw new Error(`Project path does not exist: ${root}`);
   }
+
+  const config = readJsonIfExists(path.join(root, ".vibeguard.json")) ?? {};
+  const language = normalizeLanguage(options.language ?? options.lang ?? config.language);
+  const rulesPath = options.rulesPath ?? config.rulesPath;
+  const maxFileLines = options.maxFileLines ?? config.maxFileLines;
 
   const report = {
     root,
     language,
     generatedAt: new Date().toISOString(),
+    mode: config.mode ?? "guided",
+    display: config.display ?? "traffic-light",
     project: detectProject(root),
-    rules: loadRuleLibrary(root, options.rulesPath),
+    rules: loadRuleLibrary(root, rulesPath),
     findings: [],
     gates: {
       security: gate(t(language, "gate.security.label"), "pass", t(language, "gate.security.pass")),
@@ -84,7 +94,7 @@ export function auditProject(projectPath, options = {}) {
   checkEnvSafety(root, report);
   checkPackageScripts(root, report);
   checkPaidIntegrations(root, report);
-  checkFiles(root, report, options);
+  checkFiles(root, report, { ...options, maxFileLines });
   summarize(report);
 
   return report;
@@ -281,7 +291,7 @@ function checkPaidIntegrations(root, report) {
 }
 
 function checkFiles(root, report, options) {
-  const maxFileLines = options.maxFileLines ?? 500;
+  const maxFileLines = options.maxFileLines ?? 800;
   const files = listFiles(root, { ignoreDirs: IGNORE_DIRS });
 
   for (const filePath of files) {
@@ -327,30 +337,36 @@ function scanSecretAssignments(root, filePath, content, report) {
       const name = match.groups?.name;
       const value = match.groups?.value;
       if (!name || !value) continue;
-      if (!shouldFlagAssignment(name, value)) continue;
+      const classification = classifySecretAssignment(name, value);
+      if (!classification) continue;
 
       const valueStart = match.index + match[0].lastIndexOf(value);
       const quoteStart = valueStart - 1;
       const quoteEnd = valueStart + value.length + 1;
-
-      addFinding(report, {
-        severity: "block",
+      const envName = toEnvName(name);
+      const finding = {
+        severity: classification.severity,
         category: "security",
         file: relative,
         line: lineNumberAt(content, match.index),
-        fixable: true,
-        action: "secret-quarantine",
-        message: t(report.language, "finding.secretAssignment.message", { envName: toEnvName(name) }),
-        recommendation: t(report.language, "finding.secretAssignment.recommendation"),
-        evidence: `${name}=<redacted>`,
-        fix: {
+        fixable: classification.fixable,
+        message: t(report.language, classification.messageKey, { envName }),
+        recommendation: t(report.language, classification.recommendationKey),
+        evidence: `${name}=<redacted>`
+      };
+
+      if (classification.action) finding.action = classification.action;
+      if (classification.fixable) {
+        finding.fix = {
           type: "secret-env",
           language: pattern.language,
           start: quoteStart,
           end: quoteEnd,
-          envName: toEnvName(name)
-        }
-      });
+          envName
+        };
+      }
+
+      addFinding(report, finding);
     }
   }
 }
@@ -408,13 +424,39 @@ function isInGeneratedSecretFinding(report, relative, index) {
   });
 }
 
-function shouldFlagAssignment(name, value) {
+function classifySecretAssignment(name, value) {
   if (isLikelyPlaceholder(value)) return false;
-  return isSensitiveName(name) || matchesKnownSecretValue(value);
+  if (matchesKnownSecretValue(value)) {
+    return {
+      severity: "block",
+      fixable: true,
+      action: "secret-quarantine",
+      messageKey: "finding.secretAssignment.message",
+      recommendationKey: "finding.secretAssignment.recommendation"
+    };
+  }
+  if (!isSensitiveName(name)) return false;
+  if (isDescriptiveSensitiveName(name)) return false;
+  if (looksLikeHumanText(value)) return false;
+  if (looksLikeDocumentationPath(value)) return false;
+  if (looksLikeWordPhrase(value)) return false;
+  if (!looksLikeHighEntropySecret(value)) return false;
+  return {
+    severity: "warn",
+    fixable: false,
+    messageKey: "finding.highEntropySensitiveAssignment.message",
+    recommendationKey: "finding.highEntropySensitiveAssignment.recommendation"
+  };
 }
 
 function isSensitiveName(name) {
   return /(api[_-]?key|secret|token|password|passwd|pwd|private[_-]?key|credential|service[_-]?role)/i.test(name);
+}
+
+function isDescriptiveSensitiveName(name) {
+  return /(format|policy|description|example|placeholder|schema|scope|path|manager|tokenizer|pattern|prefix|suffix|label|message|text|template|sample|mock|retry)/i.test(
+    name
+  );
 }
 
 function matchesKnownSecretValue(value) {
@@ -433,6 +475,47 @@ function isLikelyPlaceholder(value) {
   if (/x{6,}/i.test(value)) return true;
   if (/^\*+$/.test(value)) return true;
   return false;
+}
+
+function looksLikeHumanText(value) {
+  return /\s/.test(value);
+}
+
+function looksLikeDocumentationPath(value) {
+  return /^\/[A-Za-z0-9._/-]+$/.test(value);
+}
+
+function looksLikeWordPhrase(value) {
+  const tokens = value.split(/[-_./]+/).filter(Boolean);
+  if (tokens.length < 3) return false;
+  return tokens.every((token) => /^[A-Za-z]+[0-9]*$/.test(token) || /^[0-9]+$/.test(token));
+}
+
+function looksLikeHighEntropySecret(value) {
+  if (value.length < 24) return false;
+  if (/\s/.test(value)) return false;
+
+  const characterClasses = [
+    /[a-z]/.test(value),
+    /[A-Z]/.test(value),
+    /[0-9]/.test(value),
+    /[^A-Za-z0-9]/.test(value)
+  ].filter(Boolean).length;
+  if (characterClasses < 3) return false;
+
+  return shannonEntropy(value) >= 3.5;
+}
+
+function shannonEntropy(value) {
+  const counts = new Map();
+  for (const char of value) counts.set(char, (counts.get(char) ?? 0) + 1);
+
+  let entropy = 0;
+  for (const count of counts.values()) {
+    const probability = count / value.length;
+    entropy -= probability * Math.log2(probability);
+  }
+  return entropy;
 }
 
 export function toEnvName(name) {

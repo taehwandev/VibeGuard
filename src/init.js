@@ -1,10 +1,12 @@
 import path from "node:path";
 import { ensureEnvGitignore } from "./fix.js";
 import { pathExists, readTextIfExists, writeTextFile } from "./fs-utils.js";
+import { ensureGitHooks } from "./git-hooks.js";
 
-const AGENT_RULE_START_PATTERN = /<!-- vibe-guard:start(?: version=\d+)? -->/;
-const AGENT_RULE_START = "<!-- vibe-guard:start version=1 -->";
-const AGENT_RULE_END = "<!-- vibe-guard:end -->";
+const AGENT_RULE_START_PATTERN = /<!-- (?:vibeguard|vibe-guard):start(?: version=\d+)? -->/;
+const AGENT_RULE_END_PATTERN = /<!-- (?:vibeguard|vibe-guard):end -->/;
+const AGENT_RULE_START = "<!-- vibeguard:start version=1 -->";
+const AGENT_RULE_END = "<!-- vibeguard:end -->";
 
 export function initProject(projectRoot, options = {}) {
   const applied = [];
@@ -19,8 +21,10 @@ export function initProject(projectRoot, options = {}) {
       configPath,
       `${JSON.stringify(
         {
+          mode: "guided",
+          display: "traffic-light",
           rulesPath: options.rulesPath ?? null,
-          maxFileLines: 500,
+          maxFileLines: 800,
           autoFix: {
             envGitignore: true,
             envExample: true,
@@ -43,6 +47,8 @@ export function initProject(projectRoot, options = {}) {
   const agentInstructionChange = ensureAgentInstructions(projectRoot);
   if (agentInstructionChange) applied.push(agentInstructionChange);
 
+  applied.push(...ensureGitHooks(projectRoot));
+
   return applied;
 }
 
@@ -53,24 +59,25 @@ function ensureAgentInstructions(projectRoot) {
   const startMatch = existing.match(AGENT_RULE_START_PATTERN);
 
   if (startMatch) {
-    const endIndex = existing.indexOf(AGENT_RULE_END, startMatch.index);
-    if (endIndex !== -1) {
+    const endMatch = existing.slice(startMatch.index).match(AGENT_RULE_END_PATTERN);
+    if (endMatch) {
+      const endIndex = startMatch.index + endMatch.index;
       const before = existing.slice(0, startMatch.index).trimEnd();
-      const after = existing.slice(endIndex + AGENT_RULE_END.length).trimStart();
+      const after = existing.slice(endIndex + endMatch[0].length).trimStart();
       const next = joinMarkdownSections(before, block, after);
       if (next === existing) return null;
       writeTextFile(agentPath, next);
-      return "Updated AGENTS.md Vibe-Guard instructions.";
+      return "Updated AGENTS.md VibeGuard instructions.";
     }
   }
 
   if (existing.trim().length === 0) {
     writeTextFile(agentPath, `${block}\n`);
-    return "Created AGENTS.md Vibe-Guard instructions.";
+    return "Created AGENTS.md VibeGuard instructions.";
   }
 
   writeTextFile(agentPath, `${existing.trimEnd()}\n\n${block}\n`);
-  return "Added Vibe-Guard instructions to AGENTS.md.";
+  return "Added VibeGuard instructions to AGENTS.md.";
 }
 
 function joinMarkdownSections(...sections) {
@@ -80,7 +87,7 @@ function joinMarkdownSections(...sections) {
 function policyTemplate(rulesPath) {
   return `# VIBEGUARD.md
 
-This project uses Vibe-Guard before AI-generated code changes.
+This project uses VibeGuard before AI-generated code changes.
 
 ## Operating Rule
 
@@ -88,12 +95,18 @@ The agent should inspect, auto-fix low-risk safety issues, and only ask the user
 when a step can destroy data, spend money, deploy externally, or requires private
 credentials.
 
+## Audience
+
+The default mode is for non-developers. Show traffic-light status, keep the
+summary simple, and handle safe fixes behind the scenes. Developers can adjust
+\`.vibeguard.json\` for stricter thresholds and project-specific rules.
+
 ## Gates
 
 | Gate | Block When |
 | --- | --- |
 | Security | Secret values, private keys, unsafe auth, missing env ignore |
-| Cost | Paid APIs without quota or test/prod separation |
+| Cost | Paid APIs, recurring infrastructure, model calls, or cloud services without simpler alternatives, quotas, or test/prod separation |
 | Data | DB deletion, migration, production data, destructive scripts |
 | Structure | Oversized files, unclear ownership, risky one-shot edits |
 
@@ -101,10 +114,26 @@ credentials.
 
 ${rulesPath ?? "No external rule source is configured."}
 
+## Cost-Aware Architecture Rule
+
+Do not solve small product requests by stacking paid services, new databases,
+queues, background workers, model calls, analytics SDKs, or cloud resources by
+default. Prefer existing code, static/local behavior, server-side reuse,
+caching, batching, rate limits, and explicit budget boundaries. Ask before
+adding anything that can create recurring cost or operational burden.
+
+## Web Architecture Reuse Rule
+
+For web projects, do not duplicate client-side fetching, model calls, paid API
+calls, or provider SDK setup in many components. Route repeated work through
+shared server-side helpers or endpoints, cache stable or slow-changing data on
+the server, batch repeated requests, and add rate limits before exposing a path
+that can create cost or quota pressure.
+
 ## Required Workflow
 
-1. Run \`vibe-guard audit .\`.
-2. Run \`vibe-guard audit . --fix\` for fixable safety issues.
+1. Run \`vibeguard audit .\`.
+2. Run \`vibeguard audit . --fix\` for fixable safety issues.
 3. Do not print secret values.
 4. Rotate any secret that may already have been exposed.
 5. Show changed files and verification evidence before finishing.
@@ -118,15 +147,20 @@ function agentInstructionTemplate() {
 For every task that may change code, configuration, dependencies, data,
 deployment, or credentials:
 
-1. Run \`vibe-guard audit .\` before editing.
-2. If \`vibe-guard\` is unavailable, run \`npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard audit .\` instead and use the same \`npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard ...\` form for fixes.
-3. If fixable findings exist, run \`vibe-guard audit . --fix\` before implementing.
+1. Run \`vibeguard audit .\` before editing.
+2. If \`vibeguard\` is unavailable, run \`npx --yes vibeguard audit .\` instead and use the same \`npx --yes vibeguard ...\` form for fixes.
+3. If fixable findings exist, run \`vibeguard audit . --fix\` before implementing.
 4. Never print detected secret values. Keep real secrets only in ignored local env files and keep \`.env.example\` value-free.
-5. Ask before deleting data, running migrations, deploying to production, increasing paid API/model usage, or changing credentials.
-6. After editing, run relevant tests and \`vibe-guard audit .\` again before finishing.
-7. Keep VibeGuard scoped to guardrails. Do not clone, vendor, install, or link external playbooks or rule libraries unless the user explicitly asks for that separate setup.
-8. Preserve existing repo-local instructions. Only update the managed VibeGuard block between the \`vibe-guard:start\` and \`vibe-guard:end\` markers.
+5. Ask before deleting data, running migrations, deploying to production, increasing paid API/model usage, adding recurring infrastructure, or changing credentials.
+6. Prefer cost-aware architecture. Before adding a paid service, database, queue, background worker, model call, analytics SDK, or cloud resource, explain why existing code or a simpler local/server-side design is insufficient.
+7. For web apps, commonize repeated API/model/provider calls behind shared server-side helpers or endpoints. Prefer server-side caching, batching, and rate limits before adding new client-side call paths.
+8. After editing, run relevant tests and \`vibeguard audit .\` again before finishing.
+9. Before creating a commit, run \`vibeguard audit .\`; before pushing or publishing, run \`vibeguard audit . --strict\`.
+10. If execution evidence is available, run \`vibeguard evidence .\` before the final response and do not claim tests or audits ran unless they were observed.
+11. Keep secrets server-side. Do not expose provider keys, database URLs, signing secrets, service-role keys, or webhook secrets to client code.
+12. Keep VibeGuard scoped to guardrails. Do not clone, vendor, install, or link external playbooks or rule libraries unless the user explicitly asks for that separate setup.
+13. Preserve existing repo-local instructions. Only update the managed VibeGuard block between the \`vibeguard:start\` and \`vibeguard:end\` markers.
 
-Refresh this managed block with \`vibe-guard init .\`, or with \`npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard init .\` when running directly from the repo link.
+Refresh this managed block with \`vibeguard init .\`, or with \`npx --yes vibeguard init .\` when running directly from the repo link.
 ${AGENT_RULE_END}`;
 }

@@ -1,7 +1,16 @@
 #!/usr/bin/env node
 
+import fs from "node:fs";
 import path from "node:path";
 import { auditProject, sanitizeReport } from "./audit.js";
+import {
+  evidenceFromClaudeHook,
+  formatEvidenceReport,
+  installClaudeEvidenceHook,
+  loadEvidenceEvents,
+  recordEvidenceEvent,
+  summarizeEvidence
+} from "./evidence.js";
 import { applyFixes } from "./fix.js";
 import { formatAppliedFixes, formatAuditReport } from "./format.js";
 import { expandHome, pathExists } from "./fs-utils.js";
@@ -69,9 +78,33 @@ function main() {
       return;
     }
 
+    if (parsed.command === "evidence") {
+      if (parsed.positionals[0] === "install-claude-hook") {
+        const projectRoot = resolveProjectPath(parsed.positionals[1] ?? ".");
+        const result = installClaudeEvidenceHook(projectRoot);
+        if (parsed.flags.json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+        else process.stdout.write(formatAppliedFixes(result.applied, { language }));
+        return;
+      }
+
+      if (parsed.positionals[0] === "claude-hook") {
+        const projectRoot = resolveProjectPath(parsed.positionals[1] ?? process.cwd());
+        const input = fs.readFileSync(0, "utf8");
+        const event = recordEvidenceEvent(projectRoot, evidenceFromClaudeHook(input));
+        if (parsed.flags.json) process.stdout.write(`${JSON.stringify(event, null, 2)}\n`);
+        return;
+      }
+
+      const projectRoot = resolveProjectPath(parsed.positionals[0] ?? ".");
+      const summary = summarizeEvidence(loadEvidenceEvents(projectRoot));
+      if (parsed.flags.json) process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
+      else process.stdout.write(formatEvidenceReport(summary));
+      return;
+    }
+
     throw new Error(`Unknown command: ${parsed.command}`);
   } catch (error) {
-    process.stderr.write(`vibe-guard: ${error.message}\n`);
+    process.stderr.write(`vibeguard: ${error.message}\n`);
     process.exitCode = 1;
   }
 }

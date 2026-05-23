@@ -82,9 +82,20 @@ function localizeAppliedFix(language, item) {
     ["Updated .env.example with required variable names.", "fixes.envExample"],
     ["Created .vibeguard.json.", "fixes.createdConfig"],
     ["Created VIBEGUARD.md.", "fixes.createdPolicy"],
-    ["Created AGENTS.md Vibe-Guard instructions.", "fixes.createdAgents"],
-    ["Updated AGENTS.md Vibe-Guard instructions.", "fixes.updatedAgents"],
-    ["Added Vibe-Guard instructions to AGENTS.md.", "fixes.addedAgents"]
+    ["Created AGENTS.md VibeGuard instructions.", "fixes.createdAgents"],
+    ["Updated AGENTS.md VibeGuard instructions.", "fixes.updatedAgents"],
+    ["Added VibeGuard instructions to AGENTS.md.", "fixes.addedAgents"],
+    ["Installed pre-commit VibeGuard hook.", "fixes.installedPreCommit"],
+    ["Installed pre-push VibeGuard hook.", "fixes.installedPrePush"],
+    ["Updated pre-commit VibeGuard hook.", "fixes.updatedPreCommit"],
+    ["Updated pre-push VibeGuard hook.", "fixes.updatedPrePush"],
+    ["Added VibeGuard check to existing pre-commit hook.", "fixes.addedPreCommit"],
+    ["Added VibeGuard check to existing pre-push hook.", "fixes.addedPrePush"],
+    ["Wrapped existing pre-commit hook with VibeGuard check.", "fixes.wrappedPreCommit"],
+    ["Wrapped existing pre-push hook with VibeGuard check.", "fixes.wrappedPrePush"],
+    ["Installed Claude Code evidence hook.", "fixes.installedClaudeEvidence"],
+    ["Updated Claude Code evidence hook.", "fixes.updatedClaudeEvidence"],
+    ["Updated .gitignore agent evidence rules.", "fixes.agentEvidenceGitignore"]
   ]);
 
   const key = exactKeys.get(item);

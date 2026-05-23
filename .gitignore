@@ -1,10 +1,14 @@
 node_modules/
 coverage/
 .DS_Store
+.vibeguard/
+.claude/settings.local.json
+.antigravitycli/
+.codex/
+.cursor/
 
-# Vibe-Guard local secrets
+# VibeGuard local secrets
 .env
 .env.*
 !.env.example
 .env.vibeguard.local
-
