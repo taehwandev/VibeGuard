@@ -58,8 +58,14 @@ Supported languages: `en`, `ko`.
 
 ## Site
 
-A static bilingual product page lives in [site/](site/). Open
-[site/index.html](site/index.html) directly in a browser.
+A static bilingual product page lives in [site/](site/) and is intended for:
+
+```text
+https://vibeguard.thdev.app
+```
+
+For local preview, open [site/index.html](site/index.html) directly in a
+browser.
 
 ## Docs
 
