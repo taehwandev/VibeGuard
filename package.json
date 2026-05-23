@@ -1,6 +1,6 @@
 {
   "name": "@taehwandev/vibeguard",
-  "version": "26.21.2",
+  "version": "26.21.3",
   "description": "Preflight safety checker and auto-fixer for non-developers using AI coding agents.",
   "type": "module",
   "bin": {

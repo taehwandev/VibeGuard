@@ -159,9 +159,10 @@ browser.
 
 ## Release
 
-npm releases are published by GitHub Actions from release tags, not from a local
-machine. Keep npm credentials out of the repository, chat, issues, docs, and
-logs. The first publish may use a temporary `NPM_TOKEN` only as a protected
-`npm-release` environment secret because npm trusted publishing requires the
-package to exist first. Remove that token immediately after the first publish,
-then use GitHub Actions OIDC trusted publishing for future releases.
+npm releases are published by GitHub Actions when a matching GitHub Release is
+published, not from a local machine. Keep npm credentials out of the repository,
+chat, issues, docs, and logs. The first publish may use a temporary `NPM_TOKEN`
+only as a protected `npm-release` environment secret because npm trusted
+publishing requires the package to exist first. Remove that token immediately
+after the first publish, then use GitHub Actions OIDC trusted publishing for
+future releases.

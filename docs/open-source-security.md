@@ -85,8 +85,8 @@ Before publishing open source code or packages:
 6. Inspect `git diff --cached` before commit.
 7. Push only after the pre-push hook passes.
 
-npm releases must be published by GitHub Actions, not from a local machine.
-Do not publish from a developer workstation.
+npm releases must be published by GitHub Actions from a matching GitHub Release,
+not from a local machine. Do not publish from a developer workstation.
 
 For the first npm publish only, store a temporary automation token only as the
 protected `npm-release` environment secret named `NPM_TOKEN`. Do not put the

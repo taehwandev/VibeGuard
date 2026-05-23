@@ -1,9 +1,9 @@
 name: Publish npm
 
 on:
-  push:
-    tags:
-      - "v[0-9][0-9].[0-9][0-9].*"
+  release:
+    types:
+      - published
 
 permissions:
   contents: read
@@ -16,11 +16,14 @@ jobs:
     environment: npm-release
     if: github.repository == 'taehwandev/VibeGuard'
     env:
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
       HAS_FIRST_PUBLISH_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          ref: ${{ env.RELEASE_TAG }}
 
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -47,17 +50,17 @@ jobs:
           }
           NODE
 
-      - name: Verify tag matches package version
+      - name: Verify release tag matches package version
         run: |
           node --input-type=module <<'NODE'
           import fs from "node:fs";
 
           const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
           const expected = `v${pkg.version}`;
-          const actual = process.env.GITHUB_REF_NAME;
+          const actual = process.env.RELEASE_TAG;
 
           if (actual !== expected) {
-            console.error(`Tag ${actual} does not match package version ${expected}.`);
+            console.error(`Release tag ${actual} does not match package version ${expected}.`);
             process.exit(1);
           }
           NODE

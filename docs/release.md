@@ -46,8 +46,9 @@ npm run release:prepare
 
 ## GitHub Release Flow
 
-Do not publish npm releases from a local machine. Releases are published by the
-GitHub Actions workflow in `.github/workflows/publish-npm.yml`.
+Do not publish npm releases from a local machine. npm releases are published by
+the GitHub Actions workflow in `.github/workflows/publish-npm.yml` when a
+matching GitHub Release is published.
 
 Use the release number as the package version. Use a `v` prefix for Git tags:
 
@@ -64,9 +65,11 @@ Release steps:
 4. Run `npm pack --dry-run`.
 5. Push `main`.
 6. Push the matching release tag, for example `v26.21.0`.
+7. Publish a GitHub Release for that tag.
 
-The workflow verifies the tag matches `package.json`, runs tests and strict
-audit, checks package contents, then publishes to npm.
+The workflow checks out the GitHub Release tag, verifies it matches
+`package.json`, runs tests and strict audit, checks package contents, then
+publishes to npm.
 
 ## npm Authentication
 
@@ -91,15 +94,15 @@ The `npm-release` environment must require a reviewer before publish jobs can
 access environment secrets. This keeps a pushed release tag from automatically
 using the first-publish token without human approval.
 
-Then rerun the failed `v26.21.0` publish workflow. The workflow uses that token
-only for the first-publish step and uses the OIDC trusted-publishing step when
-the token is absent. Do not paste the token into chat, docs, issues, commits,
+Publish a GitHub Release for the matching tag. The workflow uses that token only
+for the first-publish step and uses the OIDC trusted-publishing step when the
+token is absent. Do not paste the token into chat, docs, issues, commits,
 terminal logs, or `.npmrc`.
 
 Immediately after the first publish succeeds, configure trusted publishing:
 
 ```bash
-npm trust github @taehwandev/vibeguard --file publish-npm.yml --repo taehwandev/VibeGuard --env npm-release
+npm trust github @taehwandev/vibeguard --file publish-npm.yml --repo taehwandev/VibeGuard --env npm-release --allow-publish
 ```
 
 Then remove the temporary secret and revoke/delete the npm token:
