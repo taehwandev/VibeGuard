@@ -222,7 +222,7 @@ export function cliHelp(language) {
 사용법:
   vibe-guard init|setup [project] [--rules <path>] [--lang <en|ko>]
   vibe-guard update [project] [--rules <path>] [--lang <en|ko>]
-  vibe-guard audit [project] [--fix] [--json] [--rules <path>] [--lang <en|ko>]
+  vibe-guard audit [project] [--fix] [--strict] [--json] [--rules <path>] [--lang <en|ko>]
   vibe-guard prompt [project] --request "<what you want>" [--rules <path>] [--lang <en|ko>]
 
 예시:
@@ -230,10 +230,14 @@ export function cliHelp(language) {
   vibe-guard update .
   vibe-guard audit . --lang ko
   vibe-guard audit . --fix --lang ko
+  vibe-guard audit . --strict --lang ko
   vibe-guard prompt . --request "로그인 추가" --lang ko
 
 언어:
   --lang <en|ko> 또는 VIBEGUARD_LANG=<en|ko>
+
+종료 코드:
+  0 = 진행 가능, 1 = --strict 주의 항목, 2 = 차단 항목
 `;
   }
 
@@ -242,7 +246,7 @@ export function cliHelp(language) {
 Usage:
   vibe-guard init|setup [project] [--rules <path>] [--lang <en|ko>]
   vibe-guard update [project] [--rules <path>] [--lang <en|ko>]
-  vibe-guard audit [project] [--fix] [--json] [--rules <path>] [--lang <en|ko>]
+  vibe-guard audit [project] [--fix] [--strict] [--json] [--rules <path>] [--lang <en|ko>]
   vibe-guard prompt [project] --request "<what you want>" [--rules <path>] [--lang <en|ko>]
 
 Examples:
@@ -250,9 +254,13 @@ Examples:
   vibe-guard update .
   vibe-guard audit .
   vibe-guard audit . --fix
+  vibe-guard audit . --strict
   vibe-guard prompt . --request "Add login"
 
 Language:
   --lang <en|ko> or VIBEGUARD_LANG=<en|ko>
+
+Exit codes:
+  0 = ready, 1 = warnings in --strict mode, 2 = blocked
 `;
 }

@@ -42,6 +42,10 @@ asks for that separate setup.
 5. Continue with the user's original coding request only after safe fixes are
    applied.
 
+Audit exits with code `2` when blocked. With `--strict`, warnings exit with code
+`1`. Treat non-zero audit exits as a stop signal unless the user explicitly
+approves the next risky step.
+
 ## Safety Rules
 
 - Never print detected secret values.

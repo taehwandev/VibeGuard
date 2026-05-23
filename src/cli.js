@@ -48,6 +48,7 @@ function main() {
           process.stdout.write("\n");
           process.stdout.write(formatAuditReport(nextReport, { language }));
         }
+        process.exitCode = auditExitCode(nextReport, parsed.flags);
         return;
       }
 
@@ -56,6 +57,7 @@ function main() {
       } else {
         process.stdout.write(formatAuditReport(report, { language }));
       }
+      process.exitCode = auditExitCode(report, parsed.flags);
       return;
     }
 
@@ -95,6 +97,10 @@ function parseArgs(args) {
       parsed.flags.json = true;
       continue;
     }
+    if (arg === "--strict") {
+      parsed.flags.strict = true;
+      continue;
+    }
     if (arg === "--lang") {
       parsed.flags.lang = args[index + 1];
       index += 1;
@@ -115,6 +121,12 @@ function parseArgs(args) {
   }
 
   return parsed;
+}
+
+function auditExitCode(report, flags = {}) {
+  if (report.summary.blocks > 0) return 2;
+  if (flags.strict && report.summary.warnings > 0) return 1;
+  return 0;
 }
 
 function resolveProjectPath(input) {

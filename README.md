@@ -32,6 +32,7 @@ Full flow: [docs/agent-bootstrap.md](docs/agent-bootstrap.md)
 vibe-guard setup .
 vibe-guard audit .
 vibe-guard audit . --fix
+vibe-guard audit . --strict
 vibe-guard prompt . --request "Add login"
 ```
 
@@ -44,6 +45,12 @@ VIBEGUARD_LANG=ko vibe-guard audit .
 ```
 
 Supported languages: `en`, `ko`.
+
+Audit exit codes:
+
+- `0`: ready, or warnings without `--strict`
+- `1`: warnings in `--strict` mode
+- `2`: blocked
 
 ## What It Does
 

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -9,6 +10,8 @@ import { formatAuditReport } from "../src/format.js";
 import { initProject } from "../src/init.js";
 import { buildAgentPrompt } from "../src/prompt.js";
 import { loadRuleLibrary } from "../src/rules.js";
+
+const CLI_PATH = new URL("../src/cli.js", import.meta.url);
 
 test("audit detects and fixes a hard-coded JavaScript secret without exposing it in reports", () => {
   const root = makeTempProject();
@@ -99,6 +102,24 @@ test("prompt includes actionable guardrails", () => {
   assert.match(prompt, /Add checkout/);
   assert.match(prompt, /If you find a secret value, do not print it/);
   assert.match(prompt, /Do not delete databases, run migrations, deploy to production/);
+});
+
+test("audit exits non-zero for blocked reports and strict warnings", () => {
+  const blockedRoot = makeTempProject();
+  const secretValue = ["blocked", "private", "value", "123456789012"].join("_");
+  fs.writeFileSync(path.join(blockedRoot, "app.js"), `const apiToken = "${secretValue}";\n`, "utf8");
+
+  const blocked = runCli(["audit", blockedRoot, "--json"]);
+  assert.equal(blocked.status, 2);
+  assert.match(blocked.stdout, /"status": "block"/);
+
+  const warningRoot = makeTempProject();
+  const defaultWarning = runCli(["audit", warningRoot, "--json"]);
+  assert.equal(defaultWarning.status, 0);
+
+  const strictWarning = runCli(["audit", warningRoot, "--json", "--strict"]);
+  assert.equal(strictWarning.status, 1);
+  assert.match(strictWarning.stdout, /"status": "warn"/);
 });
 
 test("audit report and prompt support Korean localization", () => {
@@ -196,4 +217,10 @@ function makeTempProject() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "vibe-guard-test-"));
   fs.mkdirSync(path.join(root, ".git"));
   return root;
+}
+
+function runCli(args) {
+  return spawnSync(process.execPath, [CLI_PATH.pathname, ...args], {
+    encoding: "utf8"
+  });
 }
