@@ -1,7 +1,8 @@
 import path from "node:path";
 import { ensureEnvGitignore } from "./fix.js";
-import { pathExists, readTextIfExists, writeTextFile } from "./fs-utils.js";
+import { appendUniqueLines, pathExists, readJsonIfExists, readTextIfExists, writeTextFile } from "./fs-utils.js";
 import { ensureGitHooks } from "./git-hooks.js";
+import { DEFAULT_UPDATE_CHECK_INTERVAL_DAYS, recordUpdateCheck, withDefaultUpdateSettings } from "./update-policy.js";
 
 const AGENT_RULE_START_PATTERN = /<!-- (?:vibeguard|vibe-guard):start(?: version=\d+)? -->/;
 const AGENT_RULE_END_PATTERN = /<!-- (?:vibeguard|vibe-guard):end -->/;
@@ -15,31 +16,14 @@ export function initProject(projectRoot, options = {}) {
     applied.push("Updated .gitignore env protection rules.");
   }
 
-  const configPath = path.join(projectRoot, ".vibeguard.json");
-  if (!pathExists(configPath)) {
-    writeTextFile(
-      configPath,
-      `${JSON.stringify(
-        {
-          mode: "guided",
-          display: "traffic-light",
-          rulesPath: options.rulesPath ?? null,
-          maxFileLines: 800,
-          repository: {
-            visibility: "unknown"
-          },
-          autoFix: {
-            envGitignore: true,
-            envExample: true,
-            simpleSecretQuarantine: true
-          }
-        },
-        null,
-        2
-      )}\n`
-    );
-    applied.push("Created .vibeguard.json.");
+  if (ensureStateGitignore(projectRoot)) {
+    applied.push("Updated .gitignore VibeGuard local state rules.");
   }
+
+  const configChange = ensureConfig(projectRoot, options);
+  if (configChange) applied.push(configChange);
+  recordUpdateCheck(projectRoot, options.now ?? new Date());
+  applied.push("Updated VibeGuard update check state.");
 
   const policyPath = path.join(projectRoot, "VIBEGUARD.md");
   if (!pathExists(policyPath)) {
@@ -53,6 +37,44 @@ export function initProject(projectRoot, options = {}) {
   applied.push(...ensureGitHooks(projectRoot));
 
   return applied;
+}
+
+function ensureStateGitignore(projectRoot) {
+  return appendUniqueLines(path.join(projectRoot, ".gitignore"), ["# VibeGuard local state", ".vibeguard/"]);
+}
+
+function ensureConfig(projectRoot, options) {
+  const configPath = path.join(projectRoot, ".vibeguard.json");
+  if (!pathExists(configPath)) {
+    writeTextFile(configPath, `${JSON.stringify(defaultConfig(options), null, 2)}\n`);
+    return "Created .vibeguard.json.";
+  }
+
+  const existing = readJsonIfExists(configPath) ?? {};
+  const next = withDefaultUpdateSettings(existing);
+  if (JSON.stringify(next) === JSON.stringify(existing)) return null;
+  writeTextFile(configPath, `${JSON.stringify(next, null, 2)}\n`);
+  return "Updated .vibeguard.json.";
+}
+
+function defaultConfig(options) {
+  return {
+    mode: "guided",
+    display: "traffic-light",
+    rulesPath: options.rulesPath ?? null,
+    maxFileLines: 800,
+    repository: {
+      visibility: "unknown"
+    },
+    update: {
+      checkIntervalDays: DEFAULT_UPDATE_CHECK_INTERVAL_DAYS
+    },
+    autoFix: {
+      envGitignore: true,
+      envExample: true,
+      simpleSecretQuarantine: true
+    }
+  };
 }
 
 function ensureAgentInstructions(projectRoot) {
@@ -97,6 +119,13 @@ This project uses VibeGuard before AI-generated code changes.
 The agent should inspect, auto-fix low-risk safety issues, and only ask the user
 when a step can destroy data, spend money, deploy externally, or requires private
 credentials.
+
+## Update Cadence Rule
+
+Do not refresh VibeGuard on every task. Run the audit first. If the audit says
+the local guardrails are stale, run
+\`npx --yes @taehwandev/vibeguard@latest update .\` once and rerun the audit.
+The default refresh interval is 7 days and can be tuned in \`.vibeguard.json\`.
 
 ## Chat Secret Rule
 
@@ -161,21 +190,22 @@ For every task that may change code, configuration, dependencies, data,
 deployment, or credentials:
 
 1. Run \`vibeguard audit .\` before editing.
-2. If \`vibeguard\` is unavailable, run \`npx --yes @taehwandev/vibeguard@latest audit .\` instead and use the same \`npx --yes @taehwandev/vibeguard@latest ...\` form for fixes.
-3. If fixable findings exist, run \`vibeguard audit . --fix\` before implementing.
-4. Never print detected secret values. Keep real secrets only in ignored runtime env files and keep env templates such as \`.env.example\` and \`.env.sample\` value-free.
-5. Ask before deleting data, running migrations, deploying to production, increasing paid API/model usage, adding recurring infrastructure, or changing credentials.
-6. Prefer cost-aware architecture. Before adding a paid service, database, queue, background worker, model call, analytics SDK, or cloud resource, explain why existing code or a simpler local/server-side design is insufficient.
-7. For web apps, commonize repeated API/model/provider calls behind shared server-side helpers or endpoints. Prefer server-side caching, batching, and rate limits before adding new client-side call paths.
-8. Before commit or push, verify \`git remote -v\`, repository visibility, and changed files. If the repository is public or visibility is unknown, stop before pushing secrets, env files, credentials, deployment, infrastructure, or paid-service changes.
-9. After editing, run relevant tests and \`vibeguard audit .\` again before finishing.
-10. Before creating a commit, run \`vibeguard audit .\`; before pushing or publishing, run \`vibeguard audit . --strict\`.
-11. If execution evidence is available, run \`vibeguard evidence .\` before the final response and do not claim tests or audits ran unless they were observed.
-12. Keep secrets server-side. Do not expose provider keys, database URLs, signing secrets, service-role keys, or webhook secrets to client code.
-13. If the user pastes a secret in chat, treat it as exposed. Do not repeat it, put it in commands/logs/files/GitHub secrets/deployment settings/servers, or continue with deployment using that value. Guide the user to rotate it and enter a new value only through a local provider UI or secret-store prompt.
-14. Keep VibeGuard scoped to guardrails. Do not clone, vendor, install, or link external playbooks or rule libraries unless the user explicitly asks for that separate setup.
-15. Preserve existing repo-local instructions. Only update the managed VibeGuard block between the \`vibeguard:start\` and \`vibeguard:end\` markers.
+2. If the audit reports stale VibeGuard guardrails, run \`npx --yes @taehwandev/vibeguard@latest update .\` once, then rerun \`vibeguard audit .\`. The default refresh interval is 7 days; do not update more often unless the user asks or the audit reports stale guardrails.
+3. If \`vibeguard\` is unavailable, run \`npx --yes @taehwandev/vibeguard@latest audit .\` instead and use the same \`npx --yes @taehwandev/vibeguard@latest ...\` form for fixes.
+4. If fixable findings exist, run \`vibeguard audit . --fix\` before implementing.
+5. Never print detected secret values. Keep real secrets only in ignored runtime env files and keep env templates such as \`.env.example\` and \`.env.sample\` value-free.
+6. Ask before deleting data, running migrations, deploying to production, increasing paid API/model usage, adding recurring infrastructure, or changing credentials.
+7. Prefer cost-aware architecture. Before adding a paid service, database, queue, background worker, model call, analytics SDK, or cloud resource, explain why existing code or a simpler local/server-side design is insufficient.
+8. For web apps, commonize repeated API/model/provider calls behind shared server-side helpers or endpoints. Prefer server-side caching, batching, and rate limits before adding new client-side call paths.
+9. Before commit or push, verify \`git remote -v\`, repository visibility, and changed files. If the repository is public or visibility is unknown, stop before pushing secrets, env files, credentials, deployment, infrastructure, or paid-service changes.
+10. After editing, run relevant tests and \`vibeguard audit .\` again before finishing.
+11. Before creating a commit, run \`vibeguard audit .\`; before pushing or publishing, run \`vibeguard audit . --strict\`.
+12. If execution evidence is available, run \`vibeguard evidence .\` before the final response and do not claim tests or audits ran unless they were observed.
+13. Keep secrets server-side. Do not expose provider keys, database URLs, signing secrets, service-role keys, or webhook secrets to client code.
+14. If the user pastes a secret in chat, treat it as exposed. Do not repeat it, put it in commands/logs/files/GitHub secrets/deployment settings/servers, or continue with deployment using that value. Guide the user to rotate it and enter a new value only through a local provider UI or secret-store prompt.
+15. Keep VibeGuard scoped to guardrails. Do not clone, vendor, install, or link external playbooks or rule libraries unless the user explicitly asks for that separate setup.
+16. Preserve existing repo-local instructions. Only update the managed VibeGuard block between the \`vibeguard:start\` and \`vibeguard:end\` markers.
 
-Refresh this managed block with \`vibeguard init .\`, or with \`npx --yes @taehwandev/vibeguard@latest init .\` when running directly from the repo link.
+Refresh this managed block only when \`vibeguard audit .\` reports stale guardrails, or manually with \`vibeguard update .\` / \`npx --yes @taehwandev/vibeguard@latest update .\`.
 ${AGENT_RULE_END}`;
 }

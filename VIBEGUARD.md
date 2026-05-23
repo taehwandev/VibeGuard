@@ -19,6 +19,13 @@ When VibeGuard finds an issue the tool can fix safely, it should fix it before
 asking the user. Ask the user only when the next step can destroy data, spend
 money, deploy externally, or requires private credentials.
 
+## Update Cadence Rule
+
+Do not refresh VibeGuard on every task. Run the audit first. If the audit says
+the local guardrails are stale, run
+`npx --yes @taehwandev/vibeguard@latest update .` once and rerun the audit.
+The default refresh interval is 7 days and can be tuned in `.vibeguard.json`.
+
 ## Secret Rule
 
 Never print detected secret values. If a secret may have been committed or shared,

@@ -21,7 +21,7 @@ asks for that separate setup.
 
 1. Identify the target project from the current working directory or the user's
    request.
-2. Run setup from the GitHub package:
+2. Install or refresh VibeGuard from the GitHub package:
 
    ```bash
    npx --yes @taehwandev/vibeguard@latest setup .
@@ -45,6 +45,11 @@ asks for that separate setup.
 Setup installs local `pre-commit` and `pre-push` hooks when the target project
 is a Git repository. The commit hook runs `vibeguard audit .`; the push hook
 runs `vibeguard audit . --strict`.
+
+VibeGuard uses a weekly update check by default. The hook audits do not mutate
+tracked files during commit or push. Instead, `vibeguard audit .` warns when
+the local guardrails are stale; then run
+`npx --yes @taehwandev/vibeguard@latest update .` once and rerun the audit.
 
 The audit also checks Git remote safety. Before commit or push, confirm the
 actual remote target with `git remote -v`, confirm whether the repository is

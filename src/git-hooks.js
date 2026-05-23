@@ -89,7 +89,7 @@ function resolveHookPath(projectRoot, hookName) {
 
 function hookBlock(hook) {
   return `${HOOK_RULE_START}
-# Managed by VibeGuard. Re-run \`vibeguard init .\` to refresh.
+# Managed by VibeGuard. Re-run \`vibeguard update .\` to refresh.
 echo "VibeGuard: running ${hook.name} safety audit..." >&2
 vibeguard_repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$vibeguard_repo_root" || exit 1

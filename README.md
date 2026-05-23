@@ -40,6 +40,8 @@ Rules:
   client-side fetching paths or paid integrations.
 - If a VibeGuard audit exits non-zero, treat it as a stop signal unless the user
   explicitly approves the risky next step.
+- If the audit says VibeGuard guardrails are stale, run
+  `npx --yes @taehwandev/vibeguard@latest update .` once and rerun the audit.
 - Report only what was installed, what safe fixes were applied, what checks ran,
   and what risks remain.
 
@@ -66,6 +68,7 @@ safety gaps, run checks, and then continue with the user's original coding task.
 ```bash
 npx --yes @taehwandev/vibeguard@latest setup .
 vibeguard setup .
+vibeguard update .
 vibeguard audit .
 vibeguard audit . --fix
 vibeguard audit . --strict
@@ -93,6 +96,9 @@ Audit exit codes:
 ## What It Does
 
 - Installs a managed `AGENTS.md` safety block.
+- Uses a weekly update check by default. Audits warn when local guardrails are
+  stale, and the agent refreshes them once with
+  `npx --yes @taehwandev/vibeguard@latest update .`.
 - Adds safe env ignore rules.
 - Keeps runtime env files ignored and env templates such as `.env.example` and
   `.env.sample` value-free.
@@ -127,6 +133,9 @@ mode is intentionally guided:
   "maxFileLines": 800,
   "repository": {
     "visibility": "unknown"
+  },
+  "update": {
+    "checkIntervalDays": 7
   },
   "autoFix": {
     "envGitignore": true,

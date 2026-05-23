@@ -89,6 +89,8 @@ test("init creates project policy and config", () => {
   assert.match(agentInstructions, /<!-- vibeguard:start version=1 -->/);
   assert.match(agentInstructions, /Keep VibeGuard scoped to guardrails/);
   assert.match(agentInstructions, /Preserve existing repo-local instructions/);
+  assert.match(agentInstructions, /stale VibeGuard guardrails/);
+  assert.match(agentInstructions, /default refresh interval is 7 days/);
   assert.match(agentInstructions, /Before creating a commit, run `vibeguard audit \.`/);
   assert.match(agentInstructions, /Keep secrets server-side/);
   assert.match(agentInstructions, /If the user pastes a secret in chat/);
@@ -103,9 +105,11 @@ test("init creates project policy and config", () => {
   const prePush = fs.readFileSync(path.join(root, ".git", "hooks", "pre-push"), "utf8");
   assert.match(preCommit, /# vibeguard:start version=1/);
   assert.match(preCommit, /vibeguard audit \./);
+  assert.doesNotMatch(preCommit, /npx --yes @taehwandev\/vibeguard@latest update \./);
   assert.doesNotMatch(preCommit, /--strict/);
   assert.match(prePush, /# vibeguard:start version=1/);
   assert.match(prePush, /vibeguard audit \. --strict/);
+  assert.doesNotMatch(prePush, /npx --yes @taehwandev\/vibeguard@latest update \./);
   assert.equal((fs.statSync(path.join(root, ".git", "hooks", "pre-commit")).mode & 0o111) > 0, true);
 
   const config = JSON.parse(fs.readFileSync(path.join(root, ".vibeguard.json"), "utf8"));
@@ -114,6 +118,11 @@ test("init creates project policy and config", () => {
   assert.equal(config.rulesPath, null);
   assert.equal(config.maxFileLines, 800);
   assert.equal(config.repository.visibility, "unknown");
+  assert.equal(config.update.checkIntervalDays, 7);
+  assert.ok(fs.existsSync(path.join(root, ".vibeguard", "update-state.json")));
+
+  const gitignore = fs.readFileSync(path.join(root, ".gitignore"), "utf8");
+  assert.match(gitignore, /^\.vibeguard\/$/m);
 });
 
 test("audit reads developer tuning from .vibeguard.json", () => {
@@ -130,6 +139,22 @@ test("audit reads developer tuning from .vibeguard.json", () => {
   assert.equal(report.mode, "developer");
   assert.equal(report.display, "traffic-light");
   assert.equal(report.findings.some((finding) => finding.file === "small.js" && finding.category === "structure"), true);
+});
+
+test("audit warns when VibeGuard update check state is stale", () => {
+  const root = makeTempProject();
+  initProject(root);
+  fs.writeFileSync(
+    path.join(root, ".vibeguard", "update-state.json"),
+    `${JSON.stringify({ lastCheckedAt: "2000-01-01T00:00:00.000Z" }, null, 2)}\n`,
+    "utf8"
+  );
+
+  const report = auditProject(root);
+  const finding = report.findings.find((item) => item.action === "update-vibeguard");
+  assert.equal(finding?.severity, "warn");
+  assert.match(finding.message, /7-day interval/);
+  assert.equal(report.summary.blocks, 0);
 });
 
 test("init preserves existing shell hooks while adding VibeGuard checks", () => {

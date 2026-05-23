@@ -20,6 +20,7 @@ import {
 } from "./fs-utils.js";
 import { normalizeLanguage, t } from "./i18n.js";
 import { loadRuleLibrary } from "./rules.js";
+import { staleUpdateFinding } from "./update-policy.js";
 
 const IGNORE_DIRS = new Set([
   ".git",
@@ -85,11 +86,11 @@ const PUBLIC_REVIEW_PATH_PATTERNS = [
 
 export function auditProject(projectPath, options = {}) {
   const root = path.resolve(projectPath);
-  if (!pathExists(root)) {
-    throw new Error(`Project path does not exist: ${root}`);
-  }
+  if (!pathExists(root)) throw new Error(`Project path does not exist: ${root}`);
 
-  const config = readJsonIfExists(path.join(root, ".vibeguard.json")) ?? {};
+  const configPath = path.join(root, ".vibeguard.json");
+  const hasConfig = pathExists(configPath);
+  const config = readJsonIfExists(configPath) ?? {};
   const language = normalizeLanguage(options.language ?? options.lang ?? config.language);
   const rulesPath = options.rulesPath ?? config.rulesPath;
   const maxFileLines = options.maxFileLines ?? config.maxFileLines;
@@ -118,6 +119,8 @@ export function auditProject(projectPath, options = {}) {
   };
 
   checkProjectBasics(root, report);
+  const staleUpdate = staleUpdateFinding(root, config, { hasConfig, language, now: options.now });
+  if (staleUpdate) addFinding(report, staleUpdate);
   checkGitSafety(root, report, config);
   checkEnvSafety(root, report);
   checkPackageScripts(root, report);

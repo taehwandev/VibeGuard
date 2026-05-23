@@ -40,10 +40,15 @@ user's way."
 
 - `vibeguard setup .` installs the project policy, config, env protection, and
   managed `AGENTS.md` block.
-- `vibeguard update .` reruns the same idempotent setup path and refreshes only
-  the VibeGuard managed block.
+- `vibeguard update .` reruns the same idempotent setup path and refreshes the
+  VibeGuard managed block, config defaults, hooks, and local update-check state.
 - Agents should prefer the published npm package form:
   `npx --yes @taehwandev/vibeguard@latest ...`.
+- The default update TTL is 7 days. `vibeguard audit .` should warn when the
+  local update-check state is stale, and the agent should run
+  `npx --yes @taehwandev/vibeguard@latest update .` once before continuing.
+- Commit and push hooks should not run `update .` themselves because hooks
+  should not mutate tracked files during commit or push.
 - The GitHub repository link remains the human-friendly instruction anchor, but
   the agent should use npm once the package is available.
   That keeps the tool current without requiring the user to understand global

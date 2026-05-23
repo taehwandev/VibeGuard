@@ -6,6 +6,9 @@
   "repository": {
     "visibility": "public"
   },
+  "update": {
+    "checkIntervalDays": 7
+  },
   "autoFix": {
     "envGitignore": true,
     "envExample": true,
