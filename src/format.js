@@ -8,10 +8,10 @@ const STATUS_ICON = {
 };
 
 const STATUS_LABEL = {
-  pass: "진행 가능",
-  warn: "확인 필요",
-  block: "차단",
-  info: "정보"
+  pass: "Ready",
+  warn: "Needs review",
+  block: "Blocked",
+  info: "Info"
 };
 
 export function formatAuditReport(report, options = {}) {
@@ -22,7 +22,7 @@ export function formatAuditReport(report, options = {}) {
   lines.push(`Overall: ${STATUS_ICON[report.summary.status]} ${STATUS_LABEL[report.summary.status]}`);
   lines.push(`Scanned: ${report.stats.scannedFiles} file(s), skipped ${report.stats.skippedFiles}`);
   lines.push("");
-  lines.push("| 항목 | 등급 | 상태 메시지 |");
+  lines.push("| Gate | Status | Message |");
   lines.push("| --- | --- | --- |");
   for (const [key, gate] of Object.entries(report.gates)) {
     lines.push(`| ${gate.label} | ${STATUS_ICON[gate.status]} ${STATUS_LABEL[gate.status]} | ${gate.message} |`);
@@ -49,7 +49,7 @@ export function formatAuditReport(report, options = {}) {
   const fixableCount = report.summary.fixable;
   if (fixableCount > 0) {
     lines.push("");
-    lines.push(`Next: ${fixableCount}개 항목은 \`vibe-guard audit . --fix\`로 자동 처리할 수 있습니다.`);
+    lines.push(`Next: ${fixableCount} item(s) can be handled automatically with \`vibe-guard audit . --fix\`.`);
   }
 
   if (report.rules.available) {
@@ -64,4 +64,3 @@ export function formatAppliedFixes(applied) {
   if (applied.length === 0) return "No automatic fixes were needed.\n";
   return `Applied fixes:\n${applied.map((item) => `- ${item}`).join("\n")}\n`;
 }
-

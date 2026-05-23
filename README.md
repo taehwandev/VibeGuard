@@ -26,7 +26,7 @@ agent-facing flow.
 The intended user experience is:
 
 ```text
-이 프로젝트에 https://github.com/taehwandev/VibeGuard 적용해줘.
+Apply https://github.com/taehwandev/VibeGuard to this project.
 ```
 
 The AI agent should read this repo, install or refresh the project guardrails,
@@ -60,7 +60,7 @@ Then run it in any project:
 vibe-guard setup ~/GitHub/my-project --rules ~/Documents/KeyFlowVault/agent
 vibe-guard audit ~/GitHub/my-project
 vibe-guard audit ~/GitHub/my-project --fix
-vibe-guard prompt ~/GitHub/my-project --request "로그인 기능을 추가해줘"
+vibe-guard prompt ~/GitHub/my-project --request "Add login"
 ```
 
 Without linking:
@@ -117,7 +117,7 @@ mainly useful for manual workflows or future integrations; the default path is
 to rely on the managed project instructions installed by `setup`.
 
 ```bash
-vibe-guard prompt . --request "Stripe 결제를 붙여줘"
+vibe-guard prompt . --request "Add Stripe checkout"
 ```
 
 ## Product Direction
@@ -128,3 +128,7 @@ The CLI is the first layer. Later versions can become:
 - a pre-commit hook,
 - a desktop app,
 - or an MCP server that coding agents call before editing.
+
+Agent-facing documents and generated prompts are kept in English by default.
+Localized distribution material should live separately; see
+[docs/localization.md](docs/localization.md).

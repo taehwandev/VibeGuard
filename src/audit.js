@@ -65,11 +65,11 @@ export function auditProject(projectPath, options = {}) {
     rules: loadRuleLibrary(root, options.rulesPath),
     findings: [],
     gates: {
-      security: gate("보안", "pass", "민감정보 차단 이슈 없음"),
-      cost: gate("비용", "pass", "즉시 비용 폭탄 징후 없음"),
-      data: gate("데이터", "pass", "데이터 손실 작업 징후 없음"),
-      structure: gate("구조", "pass", "구조상 즉시 차단할 문제 없음"),
-      environment: gate("환경", "pass", "기본 실행 환경 단서 확인됨")
+      security: gate("Security", "pass", "No blocking secret issues found"),
+      cost: gate("Cost", "pass", "No immediate cost spike signals found"),
+      data: gate("Data", "pass", "No data-loss operation signals found"),
+      structure: gate("Structure", "pass", "No immediate structural blockers found"),
+      environment: gate("Environment", "pass", "Basic project environment signals found")
     },
     stats: {
       scannedFiles: 0,
@@ -157,8 +157,8 @@ function checkProjectBasics(root, report) {
     addFinding(report, {
       severity: "warn",
       category: "environment",
-      message: "Git 저장소가 아닙니다. 자동 수정 전 변경 추적이 어렵습니다.",
-      recommendation: "`git init` 후 작업하거나 백업 가능한 실험 프로젝트에서 실행하세요."
+      message: "This is not a Git repository. Change tracking is limited before automatic fixes.",
+      recommendation: "Run `git init` first, or use Vibe-Guard only in a backup-friendly experiment project."
     });
   }
 
@@ -168,8 +168,8 @@ function checkProjectBasics(root, report) {
       category: "environment",
       fixable: true,
       action: "init-policy",
-      message: "VIBEGUARD.md 정책 파일이 없습니다.",
-      recommendation: "`vibe-guard init`으로 프로젝트별 안전 정책을 생성하세요."
+      message: "VIBEGUARD.md is missing.",
+      recommendation: "Run `vibe-guard init` to create the project safety policy."
     });
   }
 }
@@ -186,8 +186,8 @@ function checkEnvSafety(root, report) {
       category: "security",
       fixable: true,
       action: "env-gitignore",
-      message: ".gitignore가 없어 로컬 비밀 파일이 커밋될 수 있습니다.",
-      recommendation: "`vibe-guard audit --fix`로 env ignore 규칙을 생성하세요."
+      message: ".gitignore is missing, so local secret files may be committed.",
+      recommendation: "Run `vibe-guard audit --fix` to create safe env ignore rules."
     });
     return;
   }
@@ -199,8 +199,8 @@ function checkEnvSafety(root, report) {
       fixable: true,
       action: "env-gitignore",
       file: ".gitignore",
-      message: ".env 파일을 보호하는 ignore 규칙이 부족합니다.",
-      recommendation: "`vibe-guard audit --fix`로 .env, .env.*, !.env.example 규칙을 추가하세요."
+      message: ".gitignore does not fully protect local env files.",
+      recommendation: "Run `vibe-guard audit --fix` to add `.env`, `.env.*`, and `!.env.example` rules."
     });
   }
 
@@ -210,8 +210,8 @@ function checkEnvSafety(root, report) {
       category: "security",
       fixable: true,
       action: "env-example",
-      message: ".env.example이 없어 필요한 환경변수 이름을 안전하게 공유하기 어렵습니다.",
-      recommendation: "`vibe-guard audit --fix`로 값 없는 예시 파일을 생성하세요."
+      message: ".env.example is missing, so required env variable names are hard to share safely.",
+      recommendation: "Run `vibe-guard audit --fix` to create a value-free example env file."
     });
   }
 }
@@ -227,22 +227,22 @@ function checkPackageScripts(root, report) {
   if (!packageJson?.scripts) return;
 
   const riskyPatterns = [
-    { label: "강제 삭제", regex: /\brm\s+-rf\b/ },
-    { label: "운영 배포", regex: /\b(vercel|netlify|firebase)\b.*\b(--prod|deploy)\b/ },
-    { label: "DB 리셋", regex: /\b(prisma\s+migrate\s+reset|dropdb|sequelize\s+db:drop)\b/ },
-    { label: "데이터 손실 허용", regex: /\b--accept-data-loss\b/ },
-    { label: "SQL 삭제", regex: /\bDROP\s+(TABLE|DATABASE|SCHEMA)\b/i }
+    { label: "force delete", kind: "destructive", regex: /\brm\s+-rf\b/ },
+    { label: "production deploy", kind: "environment", regex: /\b(vercel|netlify|firebase)\b.*\b(--prod|deploy)\b/ },
+    { label: "database reset", kind: "data", regex: /\b(prisma\s+migrate\s+reset|dropdb|sequelize\s+db:drop)\b/ },
+    { label: "accepted data loss", kind: "data", regex: /\b--accept-data-loss\b/ },
+    { label: "SQL delete", kind: "data", regex: /\bDROP\s+(TABLE|DATABASE|SCHEMA)\b/i }
   ];
 
   for (const [name, command] of Object.entries(packageJson.scripts)) {
     for (const pattern of riskyPatterns) {
       if (!pattern.regex.test(command)) continue;
       addFinding(report, {
-        severity: pattern.label.includes("DB") || pattern.label.includes("삭제") ? "block" : "warn",
-        category: pattern.label.includes("DB") || pattern.label.includes("데이터") ? "data" : "environment",
+        severity: pattern.kind === "data" || pattern.kind === "destructive" ? "block" : "warn",
+        category: pattern.kind === "data" ? "data" : "environment",
         file: "package.json",
-        message: `위험 스크립트 감지: ${name} (${pattern.label})`,
-        recommendation: "AI 에이전트가 이 스크립트를 실행하기 전 명시 승인, 백업, staging 여부를 확인해야 합니다."
+        message: `Risky script detected: ${name} (${pattern.label})`,
+        recommendation: "Require explicit approval, backup status, and staging context before any AI agent runs this script."
       });
     }
   }
@@ -268,8 +268,8 @@ function checkPaidIntegrations(root, report) {
     severity: "warn",
     category: "cost",
     file: "package.json",
-    message: `외부 유료/쿼터형 서비스 의존성 감지: ${found.slice(0, 5).join(", ")}`,
-    recommendation: "예산 제한, 호출 횟수 제한, 테스트 키와 운영 키 분리를 확인하세요."
+    message: `Paid or quota-based service dependency detected: ${found.slice(0, 5).join(", ")}`,
+    recommendation: "Confirm budget limits, request limits, and separation between test and production keys."
   });
 }
 
@@ -299,8 +299,8 @@ function checkFiles(root, report, options) {
         severity: lineCount > maxFileLines * 2 ? "block" : "warn",
         category: "structure",
         file: relative,
-        message: `파일이 ${lineCount}줄입니다. 비개발자 AI 수정에는 너무 큽니다.`,
-        recommendation: "새 기능 추가 전 모듈 분리나 작은 변경 단위 계획을 요구하세요."
+        message: `File has ${lineCount} lines, which is too large for low-risk AI editing.`,
+        recommendation: "Require a module split or a small-step implementation plan before adding new behavior."
       });
     }
 
@@ -333,8 +333,8 @@ function scanSecretAssignments(root, filePath, content, report) {
         line: lineNumberAt(content, match.index),
         fixable: true,
         action: "secret-quarantine",
-        message: `하드코딩된 비밀값 후보 감지: ${toEnvName(name)}`,
-        recommendation: "`vibe-guard audit --fix`로 값을 ignored env 파일로 격리하고 코드에서는 환경변수를 읽게 바꾸세요.",
+        message: `Possible hard-coded secret assignment detected: ${toEnvName(name)}`,
+        recommendation: "Run `vibe-guard audit --fix` to move the value into an ignored env file and read it from the environment.",
         evidence: `${name}=<redacted>`,
         fix: {
           type: "secret-env",
@@ -387,8 +387,8 @@ function scanKnownSecretValues(root, filePath, content, report) {
         category: "security",
         file: relative,
         line: lineNumberAt(content, match.index),
-        message: `${pattern.label} 후보가 파일에 포함되어 있습니다.`,
-        recommendation: "값을 출력하지 말고 즉시 env/secret manager로 이동하세요. 이미 공유되었으면 키를 회전하세요.",
+        message: `Possible ${pattern.label} found in a file.`,
+        recommendation: "Do not print the value. Move it to env or a secret manager immediately. Rotate the key if it may have been shared.",
         evidence: "<redacted>"
       });
     }

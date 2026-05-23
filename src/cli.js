@@ -21,7 +21,7 @@ Examples:
   vibe-guard update .
   vibe-guard audit .
   vibe-guard audit . --fix
-  vibe-guard prompt . --request "로그인 기능을 추가해줘"
+  vibe-guard prompt . --request "Add login"
 `;
 
 main();

@@ -87,11 +87,11 @@ test("fix creates env example names from existing local env files", () => {
 test("prompt includes actionable guardrails", () => {
   const root = makeTempProject();
   const report = auditProject(root);
-  const prompt = buildAgentPrompt(report, "결제 기능 붙여줘");
+  const prompt = buildAgentPrompt(report, "Add checkout");
 
-  assert.match(prompt, /결제 기능 붙여줘/);
-  assert.match(prompt, /비밀값을 발견하면 값을 출력하지 말고/);
-  assert.match(prompt, /DB 삭제, 마이그레이션, 운영 배포/);
+  assert.match(prompt, /Add checkout/);
+  assert.match(prompt, /If you find a secret value, do not print it/);
+  assert.match(prompt, /Do not delete databases, run migrations, deploy to production/);
 });
 
 test("init updates only the managed Vibe-Guard agent instruction block", () => {

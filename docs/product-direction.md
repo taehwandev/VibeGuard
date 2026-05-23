@@ -42,6 +42,8 @@ user's way."
   installs.
 - `prompt` remains available for manual use and future integrations, but it is
   not the primary UX.
+- Agent-facing documents and generated prompts should stay in English. Localized
+  distribution copy should live separately; see `docs/localization.md`.
 
 ## Link-Only Principle
 
