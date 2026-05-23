@@ -80,3 +80,4 @@ browser.
 - [Guard scope](docs/guard-scope.md)
 - [Localization strategy](docs/localization.md)
 - [Product direction](docs/product-direction.md)
+- [Release policy](docs/release.md)

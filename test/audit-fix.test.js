@@ -10,6 +10,7 @@ import { formatAuditReport } from "../src/format.js";
 import { initProject } from "../src/init.js";
 import { buildAgentPrompt } from "../src/prompt.js";
 import { loadRuleLibrary } from "../src/rules.js";
+import { isoWeekParts, nextReleaseVersion, parseDate } from "../scripts/release-version.js";
 
 const CLI_PATH = new URL("../src/cli.js", import.meta.url);
 
@@ -211,6 +212,20 @@ test("init updates only the managed Vibe-Guard agent instruction block", () => {
   assert.match(agentInstructions, /Keep this footer\./);
   assert.match(agentInstructions, /<!-- vibe-guard:start version=1 -->/);
   assert.doesNotMatch(agentInstructions, /old instructions/);
+});
+
+test("release version uses ISO week and weekly release count", () => {
+  assert.deepEqual(isoWeekParts(parseDate("2026-05-23")), {
+    year: 2026,
+    yy: "26",
+    week: "21"
+  });
+  assert.equal(nextReleaseVersion({ date: parseDate("2026-05-23"), tags: [] }), "26.21.0");
+  assert.equal(
+    nextReleaseVersion({ date: parseDate("2026-05-23"), tags: ["v26.20.3", "v26.21.0", "v26.21.1"] }),
+    "26.21.2"
+  );
+  assert.equal(nextReleaseVersion({ date: parseDate("2026-05-25"), tags: [] }), "26.22.0");
 });
 
 function makeTempProject() {
