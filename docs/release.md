@@ -1,6 +1,6 @@
 # Release Policy
 
-Vibe-Guard uses calendar-style release numbers:
+VibeGuard uses calendar-style release numbers:
 
 ```text
 YY.WW.N
@@ -49,8 +49,14 @@ npm run release:prepare
 Use the release number as the package version. Use a `v` prefix for Git tags:
 
 ```text
-package.json: 26.21.0
+package: vibeguard@26.21.0
 git tag: v26.21.0
+```
+
+Publish public npm releases with:
+
+```bash
+npm publish
 ```
 
 ## Rules

@@ -1,6 +1,6 @@
 # Localization Strategy
 
-Vibe-Guard should separate AI-facing instructions from human-facing
+VibeGuard should separate AI-facing instructions from human-facing
 distribution copy.
 
 ## Canonical Language

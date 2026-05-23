@@ -1,6 +1,11 @@
 node_modules/
 coverage/
 .DS_Store
+.antigravitycli/
+.claude/
+.codex/
+.cursor/
+.vibeguard/
 
 .env
 .env.*

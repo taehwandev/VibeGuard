@@ -1,11 +1,19 @@
 {
-  "name": "vibe-guard",
+  "name": "vibeguard",
   "version": "26.21.0",
   "description": "Preflight safety checker and auto-fixer for non-developers using AI coding agents.",
   "type": "module",
   "bin": {
-    "vibe-guard": "./src/cli.js"
+    "vibeguard": "src/cli.js"
   },
+  "files": [
+    "AGENTS.md",
+    "VIBEGUARD.md",
+    "docs/",
+    "scripts/",
+    "site/",
+    "src/"
+  ],
   "scripts": {
     "test": "node --test",
     "start": "node src/cli.js",
@@ -20,6 +28,14 @@
     "prompt",
     "agent"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/taehwandev/VibeGuard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/taehwandev/VibeGuard/issues"
+  },
+  "homepage": "https://github.com/taehwandev/VibeGuard#readme",
   "license": "MIT",
   "engines": {
     "node": ">=18"
