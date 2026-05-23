@@ -119,12 +119,12 @@ For every task that may change code, configuration, dependencies, data,
 deployment, or credentials:
 
 1. Run \`vibe-guard audit .\` before editing.
-2. If \`vibe-guard\` is unavailable, run \`npm exec --yes --package github:taehwandev/VibeGuard -- vibe-guard audit .\` instead and use the same \`npm exec --yes --package github:taehwandev/VibeGuard -- vibe-guard ...\` form for fixes.
+2. If \`vibe-guard\` is unavailable, run \`npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard audit .\` instead and use the same \`npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard ...\` form for fixes.
 3. If fixable findings exist, run \`vibe-guard audit . --fix\` before implementing.
 4. Never print detected secret values. Keep real secrets only in ignored local env files and keep \`.env.example\` value-free.
 5. Ask before deleting data, running migrations, deploying to production, increasing paid API/model usage, or changing credentials.
 6. After editing, run relevant tests and \`vibe-guard audit .\` again before finishing.
 
-Refresh this managed block with \`vibe-guard init .\`, or with \`npm exec --yes --package github:taehwandev/VibeGuard -- vibe-guard init .\` when running directly from the repo link.
+Refresh this managed block with \`vibe-guard init .\`, or with \`npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard init .\` when running directly from the repo link.
 ${AGENT_RULE_END}`;
 }

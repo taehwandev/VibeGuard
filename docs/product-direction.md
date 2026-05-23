@@ -36,7 +36,7 @@ user's way."
 - `vibe-guard update .` reruns the same idempotent setup path and refreshes only
   the Vibe-Guard managed block.
 - Before npm publishing, agents should run directly from the repository link with
-  `npm exec --yes --package github:taehwandev/VibeGuard -- vibe-guard ...`.
+  `npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard ...`.
 - After npm publishing, agents should prefer the latest published package form.
   That keeps the tool current without requiring the user to understand global
   installs.

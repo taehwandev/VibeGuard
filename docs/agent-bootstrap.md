@@ -20,19 +20,19 @@ request.
 2. Run setup from the GitHub package:
 
    ```bash
-   npm exec --yes --package github:taehwandev/VibeGuard -- vibe-guard setup .
+   npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard setup .
    ```
 
 3. Run the safety fixer:
 
    ```bash
-   npm exec --yes --package github:taehwandev/VibeGuard -- vibe-guard audit . --fix
+   npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard audit . --fix
    ```
 
 4. Run the safety audit again:
 
    ```bash
-   npm exec --yes --package github:taehwandev/VibeGuard -- vibe-guard audit .
+   npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard audit .
    ```
 
 5. Continue with the user's original coding request only after safe fixes are
