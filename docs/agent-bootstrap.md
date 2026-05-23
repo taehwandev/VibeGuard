@@ -71,6 +71,10 @@ approves the next risky step.
 ## Safety Rules
 
 - Never print detected secret values.
+- If the user pastes a secret in chat, treat it as exposed. Do not repeat it,
+  place it in commands, logs, files, GitHub secrets, deployment settings, or any
+  server. Guide the user to rotate it and enter a new value only through a local
+  provider UI or secret-store prompt.
 - Keep real secrets in ignored local env files only.
 - Keep `.env.example` value-free.
 - Keep provider keys, database URLs, service-role keys, signing secrets, and

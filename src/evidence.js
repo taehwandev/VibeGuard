@@ -23,6 +23,7 @@ const COMMAND_CHECKS = [
 const REDACTION_PATTERNS = [
   /\bsk-(?:proj-)?[A-Za-z0-9_-]{12,}\b/g,
   /\bgh[pousr]_[A-Za-z0-9_]{12,}\b/g,
+  /\bnpm_[A-Za-z0-9]{12,}\b/g,
   /\bsk_live_[A-Za-z0-9]{12,}\b/g,
   /\bAKIA[0-9A-Z]{16}\b/g,
   /\bxox[baprs]-[A-Za-z0-9-]{12,}\b/g,

@@ -57,6 +57,19 @@ test("fix adds os import and environment reads for Python assignments", () => {
   assert.equal(source.includes(secretValue), false);
 });
 
+test("audit blocks npm access tokens without exposing them", () => {
+  const root = makeTempProject();
+  const tokenValue = `npm_${"a".repeat(12)}${"B".repeat(12)}${"3".repeat(12)}`;
+  fs.writeFileSync(path.join(root, "notes.md"), `temporary token: ${tokenValue}\n`, "utf8");
+
+  const report = auditProject(root);
+  assert.equal(report.summary.blocks, 1);
+  assert.ok(report.findings.some((finding) => finding.message.includes("npm access token")));
+
+  const serialized = JSON.stringify(sanitizeReport(report));
+  assert.equal(serialized.includes(tokenValue), false);
+});
+
 test("init creates project policy and config", () => {
   const root = makeTempProject();
   const applied = initProject(root);
@@ -78,6 +91,7 @@ test("init creates project policy and config", () => {
   assert.match(agentInstructions, /Preserve existing repo-local instructions/);
   assert.match(agentInstructions, /Before creating a commit, run `vibeguard audit \.`/);
   assert.match(agentInstructions, /Keep secrets server-side/);
+  assert.match(agentInstructions, /If the user pastes a secret in chat/);
   assert.match(agentInstructions, /Prefer cost-aware architecture/);
   assert.match(agentInstructions, /commonize repeated API\/model\/provider calls/);
   assert.match(
@@ -174,6 +188,7 @@ test("prompt includes actionable guardrails", () => {
   assert.match(prompt, /Prefer cost-aware architecture/);
   assert.match(prompt, /commonize repeated API\/model\/provider calls/);
   assert.match(prompt, /verify `git remote -v`, repository visibility, and changed files/);
+  assert.match(prompt, /If the user pastes a secret in chat/);
 });
 
 test("audit avoids descriptive sensitive-name false positives", () => {
@@ -294,12 +309,13 @@ test("audit exits non-zero for blocked reports and strict warnings", () => {
 test("evidence records Claude hook command execution without leaking secrets", () => {
   const root = makeTempProject();
   const secretValue = `sk-proj-${"c".repeat(24)}${"3".repeat(12)}`;
+  const npmTokenValue = `npm_${"d".repeat(12)}${"E".repeat(12)}${"4".repeat(12)}`;
   const hookInput = {
     cwd: root,
     hook_event_name: "PostToolUse",
     tool_name: "Bash",
     tool_input: {
-      command: `npm test && echo ${secretValue}`
+      command: `npm test && echo ${secretValue} && echo ${npmTokenValue}`
     },
     tool_use_id: "toolu_test",
     duration_ms: 42
@@ -310,10 +326,12 @@ test("evidence records Claude hook command execution without leaking secrets", (
   });
   assert.equal(recorded.status, 0);
   assert.equal(recorded.stdout.includes(secretValue), false);
+  assert.equal(recorded.stdout.includes(npmTokenValue), false);
   assert.match(recorded.stdout, /"agent": "claude-code"/);
 
   const evidenceFile = fs.readFileSync(path.join(root, ".vibeguard", "session", "events.jsonl"), "utf8");
   assert.equal(evidenceFile.includes(secretValue), false);
+  assert.equal(evidenceFile.includes(npmTokenValue), false);
   assert.match(evidenceFile, /<redacted>/);
 
   const summary = runCli(["evidence", root, "--json"]);

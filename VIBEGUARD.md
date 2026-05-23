@@ -24,6 +24,12 @@ money, deploy externally, or requires private credentials.
 Never print detected secret values. If a secret may have been committed or shared,
 rotate it even after moving it into an ignored env file.
 
+If the user pastes a secret in chat, treat it as exposed. Do not repeat it, pass
+it as a command argument, write it to logs, save it to repository files, add it
+to GitHub secrets yourself, or deploy it to a server. Tell the user to rotate
+the value and enter a new one only through a local provider UI or a secret-store
+prompt.
+
 ## Git Gate Rule
 
 Run `vibeguard audit .` before commits and `vibeguard audit . --strict`

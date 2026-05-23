@@ -83,7 +83,8 @@ The installed hook pipes hook input into VibeGuard:
 }
 ```
 
-VibeGuard redacts likely secrets before writing the event. It currently tracks
+VibeGuard redacts likely secrets before writing the event, including npm access
+tokens, provider keys, database URLs, and private keys. It currently tracks
 whether these command classes were observed:
 
 - `vibeguard audit .`

@@ -33,6 +33,7 @@ const IGNORE_DIRS = new Set([
 const KNOWN_SECRET_PATTERNS = [
   { label: "OpenAI API key", regex: /\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}\b/g },
   { label: "GitHub token", regex: /\bgh[pousr]_[A-Za-z0-9_]{20,}\b/g },
+  { label: "npm access token", regex: /\bnpm_[A-Za-z0-9]{20,}\b/g },
   { label: "Stripe live secret key", regex: /\bsk_live_[A-Za-z0-9]{20,}\b/g },
   { label: "AWS access key", regex: /\bAKIA[0-9A-Z]{16}\b/g },
   { label: "Slack token", regex: /\bxox[baprs]-[A-Za-z0-9-]{20,}\b/g },

@@ -9,6 +9,10 @@ agents.
   risk or complexity.
 - Prefer deterministic local checks before model-based judgment.
 - Never print detected secret values in command output, tests, docs, or examples.
+- Treat user-pasted secrets in chat as exposed. Do not reuse them in commands,
+  logs, files, GitHub secrets, deployment settings, or servers; guide the user
+  to rotate them and enter new values only through local provider UI or
+  secret-store prompts.
 - Treat auto-fixes as safety fixes: ignored env files, example env files, and
   simple hard-coded secret quarantine only.
 - Treat cost-aware architecture as a core guardrail: generated instructions

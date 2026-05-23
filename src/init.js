@@ -98,6 +98,14 @@ The agent should inspect, auto-fix low-risk safety issues, and only ask the user
 when a step can destroy data, spend money, deploy externally, or requires private
 credentials.
 
+## Chat Secret Rule
+
+If the user pastes a secret in chat, treat it as exposed. Do not repeat it, pass
+it as a command argument, write it to logs, save it to repository files, add it
+to GitHub secrets yourself, or deploy it to a server. Tell the user to rotate
+the value and enter a new one only through a local provider UI or a secret-store
+prompt.
+
 ## Audience
 
 The default mode is for non-developers. Show traffic-light status, keep the
@@ -164,8 +172,9 @@ deployment, or credentials:
 10. Before creating a commit, run \`vibeguard audit .\`; before pushing or publishing, run \`vibeguard audit . --strict\`.
 11. If execution evidence is available, run \`vibeguard evidence .\` before the final response and do not claim tests or audits ran unless they were observed.
 12. Keep secrets server-side. Do not expose provider keys, database URLs, signing secrets, service-role keys, or webhook secrets to client code.
-13. Keep VibeGuard scoped to guardrails. Do not clone, vendor, install, or link external playbooks or rule libraries unless the user explicitly asks for that separate setup.
-14. Preserve existing repo-local instructions. Only update the managed VibeGuard block between the \`vibeguard:start\` and \`vibeguard:end\` markers.
+13. If the user pastes a secret in chat, treat it as exposed. Do not repeat it, put it in commands/logs/files/GitHub secrets/deployment settings/servers, or continue with deployment using that value. Guide the user to rotate it and enter a new value only through a local provider UI or secret-store prompt.
+14. Keep VibeGuard scoped to guardrails. Do not clone, vendor, install, or link external playbooks or rule libraries unless the user explicitly asks for that separate setup.
+15. Preserve existing repo-local instructions. Only update the managed VibeGuard block between the \`vibeguard:start\` and \`vibeguard:end\` markers.
 
 Refresh this managed block with \`vibeguard init .\`, or with \`npx --yes vibeguard init .\` when running directly from the repo link.
 ${AGENT_RULE_END}`;

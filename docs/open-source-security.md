@@ -63,6 +63,10 @@ project to a similarly named public or production repository.
 - Keep `.env.example` value-free. It may list names, never real values.
 - Do not print detected secret values in terminal output, docs, tests, issues,
   commits, screenshots, or support messages.
+- If a user pastes a secret into AI chat, treat it as exposed. The agent must
+  not reuse it in commands, GitHub secrets, deployment settings, server
+  configuration, or files. Rotate it and request a fresh value through a local
+  provider UI or secret-store prompt.
 - Rotate any key that may have been committed, pasted into an agent, uploaded to
   a remote repository, or shown in logs.
 - Use deployment secret stores for production values. Do not encode production

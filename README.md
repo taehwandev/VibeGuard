@@ -21,6 +21,9 @@ Then continue with the user's original coding request.
 Rules:
 
 - Never print detected secret values.
+- Treat secrets pasted into AI chat as exposed. Do not reuse them in commands,
+  logs, GitHub secrets, deployment settings, servers, or files; rotate them and
+  enter fresh values only through local provider UI or secret-store prompts.
 - Preserve existing repo-local instructions.
 - Stop and ask before destructive, costly, production, credential, or
   data-changing work.
