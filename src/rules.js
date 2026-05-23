@@ -27,8 +27,7 @@ export function resolveRulesPath(projectRoot, explicitRulesPath) {
   const config = readConfig(projectRoot);
   if (config.rulesPath) return path.resolve(expandHome(config.rulesPath));
 
-  const defaultPath = path.resolve(expandHome("~/Documents/KeyFlowVault/agent"));
-  return pathExists(defaultPath) ? defaultPath : null;
+  return null;
 }
 
 export function loadRuleLibrary(projectRoot, explicitRulesPath) {

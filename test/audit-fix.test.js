@@ -55,7 +55,7 @@ test("fix adds os import and environment reads for Python assignments", () => {
 
 test("init creates project policy and config", () => {
   const root = makeTempProject();
-  const applied = initProject(root, { rulesPath: "~/Documents/KeyFlowVault/agent" });
+  const applied = initProject(root);
 
   assert.ok(applied.includes("Created .vibeguard.json."));
   assert.ok(applied.includes("Created VIBEGUARD.md."));
@@ -66,10 +66,15 @@ test("init creates project policy and config", () => {
 
   const agentInstructions = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");
   assert.match(agentInstructions, /<!-- vibe-guard:start version=1 -->/);
+  assert.match(agentInstructions, /Keep VibeGuard scoped to guardrails/);
+  assert.match(agentInstructions, /Preserve existing repo-local instructions/);
   assert.match(
     agentInstructions,
     /npm --no-update-notifier exec --yes --package github:taehwandev\/VibeGuard -- vibe-guard audit \./
   );
+
+  const config = JSON.parse(fs.readFileSync(path.join(root, ".vibeguard.json"), "utf8"));
+  assert.equal(config.rulesPath, null);
 });
 
 test("fix creates env example names from existing local env files", () => {

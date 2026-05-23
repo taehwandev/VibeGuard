@@ -12,6 +12,9 @@ It should not behave like a lecture. It should:
 4. install persistent agent instructions so the user does not need to write a
    careful safety prompt every time.
 
+It should stay a guard. It must not become an installer or router for external
+playbooks by default.
+
 ## First Useful User Flow
 
 ```text
@@ -45,6 +48,9 @@ user's way."
 - Agent-facing documents should stay in English. CLI output, generated prompts,
   and distribution pages can be localized with explicit language selection; see
   `docs/localization.md`.
+- External playbooks or rule libraries are separate products. Vibe-Guard may
+  read an explicitly configured rule source, but setup should not clone, vendor,
+  install, or link one by default.
 
 ## Link-Only Principle
 

@@ -13,6 +13,10 @@ Install or refresh Vibe-Guard in the current target project, run the safe checks
 auto-fix low-risk issues, and then continue with the user's original coding
 request.
 
+Vibe-Guard is only the guardrail layer. Applying it must not clone, vendor,
+install, or link external playbooks or rule libraries unless the user explicitly
+asks for that separate setup.
+
 ## Required Flow
 
 1. Identify the target project from the current working directory or the user's
@@ -47,6 +51,12 @@ request.
   increasing paid API/model usage, or changing credentials.
 - If Node.js or npm is unavailable, explain the blocker in plain language and
   do not ask the user to debug package-manager details.
+- Preserve existing repo-local agent instructions. Only update the managed
+  VibeGuard block.
+- Do not copy large guidance libraries, private prompts, or unrelated policy
+  documents into the target project.
+- Do not auto-fix destructive, architectural, deployment, billing, data, or
+  credential decisions.
 
 ## User-Facing Summary
 

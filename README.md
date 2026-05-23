@@ -53,6 +53,8 @@ Supported languages: `en`, `ko`.
 - Detects likely hard-coded secrets without printing secret values.
 - Quarantines simple JS/TS/Python hard-coded secrets with `--fix`.
 - Flags risky scripts, oversized files, paid integrations, and data/cost risks.
+- Stays scoped to guardrails; it does not install or link external playbooks by
+  default.
 
 ## Site
 
@@ -62,6 +64,6 @@ A static bilingual product page lives in [site/](site/). Open
 ## Docs
 
 - [Agent bootstrap](docs/agent-bootstrap.md)
+- [Guard scope](docs/guard-scope.md)
 - [Localization strategy](docs/localization.md)
 - [Product direction](docs/product-direction.md)
-

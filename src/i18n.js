@@ -226,7 +226,7 @@ export function cliHelp(language) {
   vibe-guard prompt [project] --request "<what you want>" [--rules <path>] [--lang <en|ko>]
 
 예시:
-  vibe-guard setup . --rules ~/Documents/KeyFlowVault/agent --lang ko
+  vibe-guard setup . --lang ko
   vibe-guard update .
   vibe-guard audit . --lang ko
   vibe-guard audit . --fix --lang ko
@@ -246,7 +246,7 @@ Usage:
   vibe-guard prompt [project] --request "<what you want>" [--rules <path>] [--lang <en|ko>]
 
 Examples:
-  vibe-guard setup . --rules ~/Documents/KeyFlowVault/agent
+  vibe-guard setup .
   vibe-guard update .
   vibe-guard audit .
   vibe-guard audit . --fix
@@ -256,4 +256,3 @@ Language:
   --lang <en|ko> or VIBEGUARD_LANG=<en|ko>
 `;
 }
-

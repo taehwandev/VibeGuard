@@ -19,7 +19,7 @@ export function initProject(projectRoot, options = {}) {
       configPath,
       `${JSON.stringify(
         {
-          rulesPath: options.rulesPath ?? "~/Documents/KeyFlowVault/agent",
+          rulesPath: options.rulesPath ?? null,
           maxFileLines: 500,
           autoFix: {
             envGitignore: true,
@@ -99,7 +99,7 @@ credentials.
 
 ## Local Shared Rules
 
-${rulesPath ?? "~/Documents/KeyFlowVault/agent"}
+${rulesPath ?? "No external rule source is configured."}
 
 ## Required Workflow
 
@@ -124,6 +124,8 @@ deployment, or credentials:
 4. Never print detected secret values. Keep real secrets only in ignored local env files and keep \`.env.example\` value-free.
 5. Ask before deleting data, running migrations, deploying to production, increasing paid API/model usage, or changing credentials.
 6. After editing, run relevant tests and \`vibe-guard audit .\` again before finishing.
+7. Keep VibeGuard scoped to guardrails. Do not clone, vendor, install, or link external playbooks or rule libraries unless the user explicitly asks for that separate setup.
+8. Preserve existing repo-local instructions. Only update the managed VibeGuard block between the \`vibe-guard:start\` and \`vibe-guard:end\` markers.
 
 Refresh this managed block with \`vibe-guard init .\`, or with \`npm --no-update-notifier exec --yes --package github:taehwandev/VibeGuard -- vibe-guard init .\` when running directly from the repo link.
 ${AGENT_RULE_END}`;
