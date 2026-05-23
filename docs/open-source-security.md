@@ -87,6 +87,8 @@ Do not publish from a developer workstation.
 For the first npm publish only, store a temporary automation token only as the
 protected `npm-release` environment secret named `NPM_TOKEN`. Do not put the
 token in repository secrets, `.npmrc`, chat, docs, issues, commits, or logs.
+The `npm-release` environment must require reviewer approval before publish
+jobs can access its secrets.
 After the first publish creates the package on npm, configure GitHub Actions
 OIDC trusted publishing with `npm trust github`, remove the `NPM_TOKEN`
 environment secret, and revoke/delete the npm token. Future releases must use

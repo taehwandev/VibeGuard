@@ -87,6 +87,10 @@ environment secret, not as a repository file:
 gh secret set NPM_TOKEN --repo taehwandev/VibeGuard --env npm-release
 ```
 
+The `npm-release` environment must require a reviewer before publish jobs can
+access environment secrets. This keeps a pushed release tag from automatically
+using the first-publish token without human approval.
+
 Then rerun the failed `v26.21.0` publish workflow. The workflow uses that token
 only for the first-publish step and uses the OIDC trusted-publishing step when
 the token is absent. Do not paste the token into chat, docs, issues, commits,
