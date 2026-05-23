@@ -15,7 +15,9 @@ It should not behave like a lecture. It should:
 ## First Useful User Flow
 
 ```text
-User or agent runs setup once
+User gives the Vibe-Guard GitHub link to an AI coding agent
+-> Agent reads the repo bootstrap instructions
+-> Agent runs setup in the user's current project
 -> Vibe-Guard installs project policy and managed agent instructions
 -> User types a normal request
 -> Agent runs Vibe-Guard before editing
@@ -33,11 +35,24 @@ user's way."
   managed `AGENTS.md` block.
 - `vibe-guard update .` reruns the same idempotent setup path and refreshes only
   the Vibe-Guard managed block.
-- For non-developer usage, agents should prefer `npm exec --yes vibe-guard@latest
-  -- ...` when the local command is missing. That keeps the tool current without
-  requiring the user to understand global installs.
+- Before npm publishing, agents should run directly from the repository link with
+  `npm exec --yes --package github:taehwandev/VibeGuard -- vibe-guard ...`.
+- After npm publishing, agents should prefer the latest published package form.
+  That keeps the tool current without requiring the user to understand global
+  installs.
 - `prompt` remains available for manual use and future integrations, but it is
   not the primary UX.
+
+## Link-Only Principle
+
+The user should be able to paste only this link into an AI coding agent:
+
+```text
+https://github.com/taehwandev/VibeGuard
+```
+
+The agent should infer that it needs to install or refresh Vibe-Guard in the
+current project, run the safety workflow, and continue the user's original task.
 
 ## MVP Principle
 

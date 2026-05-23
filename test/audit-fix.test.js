@@ -64,7 +64,7 @@ test("init creates project policy and config", () => {
 
   const agentInstructions = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");
   assert.match(agentInstructions, /<!-- vibe-guard:start version=1 -->/);
-  assert.match(agentInstructions, /npm exec --yes vibe-guard@latest -- audit \./);
+  assert.match(agentInstructions, /npm exec --yes --package github:taehwandev\/VibeGuard -- vibe-guard audit \./);
 });
 
 test("fix creates env example names from existing local env files", () => {
