@@ -70,7 +70,7 @@ audit, checks package contents, then publishes to npm.
 
 ## npm Authentication
 
-Prefer npm Trusted Publishing with GitHub Actions OIDC. Configure npm's trusted
+Use npm Trusted Publishing with GitHub Actions OIDC. Configure npm's trusted
 publisher for:
 
 - Owner: `taehwandev`
@@ -79,11 +79,33 @@ publisher for:
 - Environment: `npm-release`
 - Allowed action: `npm publish`
 
-For a first publish, npm may require a temporary automation token because the
-package does not exist yet. If needed, store it only as the GitHub Actions
-secret `NPM_TOKEN`. Never commit `.npmrc`, raw tokens, OTP values, or registry
-auth lines. After trusted publishing is configured and verified, remove the
-temporary token from GitHub and npm.
+`npm trust` currently requires the package to already exist on the npm registry.
+For the first publish only, use a temporary automation token stored as an
+environment secret, not as a repository file:
+
+```bash
+gh secret set NPM_TOKEN --repo taehwandev/VibeGuard --env npm-release
+```
+
+Then rerun the failed `v26.21.0` publish workflow. The workflow uses that token
+only for the first-publish step and uses the OIDC trusted-publishing step when
+the token is absent. Do not paste the token into chat, docs, issues, commits,
+terminal logs, or `.npmrc`.
+
+Immediately after the first publish succeeds, configure trusted publishing:
+
+```bash
+npm trust github vibeguard --file publish-npm.yml --repo taehwandev/VibeGuard --env npm-release
+```
+
+Then remove the temporary secret and revoke/delete the npm token:
+
+```bash
+gh secret delete NPM_TOKEN --repo taehwandev/VibeGuard --env npm-release
+```
+
+Future releases must use GitHub Actions OIDC. Keep the workflow's `id-token:
+write` permission enabled.
 
 ## Rules
 

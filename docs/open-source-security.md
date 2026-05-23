@@ -82,10 +82,15 @@ Before publishing open source code or packages:
 7. Push only after the pre-push hook passes.
 
 npm releases must be published by GitHub Actions, not from a local machine.
-Prefer npm Trusted Publishing through GitHub Actions OIDC. If the first publish
-requires a temporary npm token, store it only as a GitHub Actions secret named
-`NPM_TOKEN`, use the protected `npm-release` environment, and remove the token
-after trusted publishing is configured.
+Do not publish from a developer workstation.
+
+For the first npm publish only, store a temporary automation token only as the
+protected `npm-release` environment secret named `NPM_TOKEN`. Do not put the
+token in repository secrets, `.npmrc`, chat, docs, issues, commits, or logs.
+After the first publish creates the package on npm, configure GitHub Actions
+OIDC trusted publishing with `npm trust github`, remove the `NPM_TOKEN`
+environment secret, and revoke/delete the npm token. Future releases must use
+trusted publishing rather than a long-lived npm token.
 
 VibeGuard reduces common exposure paths, but it does not replace provider-side
 secret scanning, branch protection, code review, or key rotation.
