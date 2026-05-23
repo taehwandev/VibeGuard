@@ -44,7 +44,10 @@ To write the computed version into `package.json`:
 npm run release:prepare
 ```
 
-## Tags
+## GitHub Release Flow
+
+Do not publish npm releases from a local machine. Releases are published by the
+GitHub Actions workflow in `.github/workflows/publish-npm.yml`.
 
 Use the release number as the package version. Use a `v` prefix for Git tags:
 
@@ -53,11 +56,34 @@ package: vibeguard@26.21.0
 git tag: v26.21.0
 ```
 
-Publish public npm releases with:
+Release steps:
 
-```bash
-npm publish
-```
+1. Ensure the working tree is clean.
+2. Run `npm test`.
+3. Run `node src/cli.js audit . --strict`.
+4. Run `npm pack --dry-run`.
+5. Push `main`.
+6. Push the matching release tag, for example `v26.21.0`.
+
+The workflow verifies the tag matches `package.json`, runs tests and strict
+audit, checks package contents, then publishes to npm.
+
+## npm Authentication
+
+Prefer npm Trusted Publishing with GitHub Actions OIDC. Configure npm's trusted
+publisher for:
+
+- Owner: `taehwandev`
+- Repository: `VibeGuard`
+- Workflow filename: `publish-npm.yml`
+- Environment: `npm-release`
+- Allowed action: `npm publish`
+
+For a first publish, npm may require a temporary automation token because the
+package does not exist yet. If needed, store it only as the GitHub Actions
+secret `NPM_TOKEN`. Never commit `.npmrc`, raw tokens, OTP values, or registry
+auth lines. After trusted publishing is configured and verified, remove the
+temporary token from GitHub and npm.
 
 ## Rules
 

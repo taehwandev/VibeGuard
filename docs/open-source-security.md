@@ -56,6 +56,8 @@ project to a similarly named public or production repository.
 
 - Never commit real API keys, database URLs, private keys, signing secrets,
   service-role keys, webhook secrets, session secrets, or provider tokens.
+- Never commit `.npmrc` files containing registry authentication, npm tokens,
+  one-time passwords, or GitHub Actions secret values.
 - Keep local values in ignored files such as `.env`, `.env.local`, or
   `.env.vibeguard.local`.
 - Keep `.env.example` value-free. It may list names, never real values.
@@ -78,6 +80,12 @@ Before publishing open source code or packages:
    `vibeguard.repositoryVisibility`.
 6. Inspect `git diff --cached` before commit.
 7. Push only after the pre-push hook passes.
+
+npm releases must be published by GitHub Actions, not from a local machine.
+Prefer npm Trusted Publishing through GitHub Actions OIDC. If the first publish
+requires a temporary npm token, store it only as a GitHub Actions secret named
+`NPM_TOKEN`, use the protected `npm-release` environment, and remove the token
+after trusted publishing is configured.
 
 VibeGuard reduces common exposure paths, but it does not replace provider-side
 secret scanning, branch protection, code review, or key rotation.

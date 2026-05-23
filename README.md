@@ -153,3 +153,10 @@ browser.
 - [Product direction](docs/product-direction.md)
 - [Release policy](docs/release.md)
 - [Server-to-client security](docs/server-client-security.md)
+
+## Release
+
+npm releases are published by GitHub Actions from release tags, not from a local
+machine. Keep npm credentials out of the repository; use npm Trusted Publishing
+or a GitHub Actions secret named `NPM_TOKEN` only for the first publish if npm
+requires it.
