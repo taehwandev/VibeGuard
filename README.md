@@ -1,6 +1,11 @@
 # VibeGuard
 
-VibeGuard is a safety layer for AI coding agents.
+VibeGuard is a preflight safety check for AI coding agents.
+
+- Website: https://vibeguard.thdev.app/
+- AgentPlaybook: https://agentplaybook.thdev.app/
+- Korean guide: [docs/ko.md](docs/ko.md)
+- Package: `@taehwandev/vibeguard`
 
 ## For AI Coding Agents
 
@@ -56,12 +61,15 @@ AI coding chat:
 Apply https://github.com/taehwandev/VibeGuard to this project.
 ```
 
-The default audience is non-developers. VibeGuard should show simple status
-with distinct emoji while the AI agent handles safe fixes behind the scenes.
+The default audience is non-developers. VibeGuard should show simple status with
+distinct emoji while the AI agent handles safe fixes behind the scenes.
 Developers can tune the behavior with `.vibeguard.json`.
 
 Give an agent this link, and it should install project guardrails, fix low-risk
 safety gaps, run checks, and then continue with the user's original coding task.
+
+For a Korean walkthrough, read [docs/ko.md](docs/ko.md). The public website is
+available at https://vibeguard.thdev.app/.
 
 ## CLI
 
@@ -120,6 +128,15 @@ Audit exit codes:
 - Stays scoped to guardrails; it does not install or link external playbooks by
   default.
 
+## AgentPlaybook Relationship
+
+VibeGuard is the safety gate. AgentPlaybook is the external execution playbook
+for planning, implementation, verification, review, and handoff. This repository
+links to an existing local AgentPlaybook path when configured, but it does not
+clone, vendor, or copy AgentPlaybook into a target project by default.
+
+AgentPlaybook website: https://agentplaybook.thdev.app/
+
 ## Configuration
 
 `vibeguard setup .` creates `.vibeguard.json` for developer tuning. The default
@@ -158,6 +175,7 @@ browser.
 
 ## Docs
 
+- [Korean guide](docs/ko.md)
 - [Agent bootstrap](docs/agent-bootstrap.md)
 - [Execution evidence](docs/execution-evidence.md)
 - [Guard scope](docs/guard-scope.md)

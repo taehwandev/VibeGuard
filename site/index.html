@@ -3,15 +3,17 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>VibeGuard - Safety Layer for AI Coding Agents</title>
+    <title>VibeGuard - Preflight Checks for AI Coding Agents</title>
     <meta
       name="description"
-      content="Copy one sentence into an AI coding chat so the agent applies VibeGuard, checks local safety risks, and pauses before risky work."
+      content="Paste one line into an AI coding chat so the agent checks secrets, cost, data, deploy, and repository risks before editing a real project."
     >
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%231f9c5d%22 stroke-width=%222.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z%22/><path d=%22m9 11 2 2 4-4%22/></svg>">
-    <meta property="og:title" content="VibeGuard - Safety Layer for AI Coding Agents">
-    <meta property="og:description" content="Copy one sentence into an AI coding chat so the agent applies VibeGuard, checks local safety risks, and pauses before risky work.">
+    <link rel="canonical" href="https://vibeguard.thdev.app/">
+    <meta property="og:title" content="VibeGuard - Preflight Checks for AI Coding Agents">
+    <meta property="og:description" content="Paste one line into an AI coding chat so the agent checks secrets, cost, data, deploy, and repository risks before editing a real project.">
     <meta property="og:type" content="website">
+    <meta property="og:url" content="https://vibeguard.thdev.app/">
     <link rel="stylesheet" href="./styles.css?v=2">
     <link rel="stylesheet" href="./hero.css?v=2">
     <link rel="stylesheet" href="./sections.css?v=2">
@@ -34,8 +36,10 @@
       </a>
       <nav class="nav" aria-label="Primary navigation" data-i18n-aria-label="primaryNavLabel">
         <a href="#audience" data-i18n="navAudience">Who it's for</a>
+        <a href="#playbook" data-i18n="navPlaybook">AgentPlaybook</a>
         <a href="#how" data-i18n="navHow">How it works</a>
         <a href="#checks" data-i18n="navChecks">Safety Gates</a>
+        <a href="https://github.com/taehwandev/VibeGuard#readme" data-i18n="navDocs">Docs</a>
       </nav>
       <div class="language" role="group" aria-label="Language selector" data-i18n-aria-label="languageSelectorLabel">
         <button class="language-button is-active" type="button" data-lang="en" aria-label="Switch to English" data-i18n-aria-label="switchToEnglishLabel">EN</button>
@@ -78,22 +82,22 @@
           <div class="scene-panel scene-pause">
             <span class="scene-status" data-i18n="sceneStatus">Needs approval</span>
             <strong data-i18n="scenePauseTitle">Stop before risky work</strong>
-            <p data-i18n="scenePauseText">Data, credentials, cost, architecture, and production changes require an explicit user check.</p>
+            <p data-i18n="scenePauseText">Data, credentials, cost, architecture, repository, and production changes require an explicit user check.</p>
           </div>
           <div class="scene-rail scene-rail-a"></div>
           <div class="scene-rail scene-rail-b"></div>
         </div>
 
         <div class="hero-copy">
-          <p class="eyebrow" data-i18n="eyebrow">Safety layer for AI coding agents</p>
-          <h1 data-i18n="heroTitle">VibeGuard helps AI agents pause before risky coding work.</h1>
+          <p class="eyebrow" data-i18n="eyebrow">Preflight checks for AI coding agents</p>
+          <h1 data-i18n="heroTitle">Before an AI edits your project, make it run VibeGuard.</h1>
           <p class="lead" data-i18n="heroLead">
-            Copy one sentence into Cursor, Windsurf, Claude Code, or another AI coding chat. The agent applies local guardrails, fixes simple setup gaps, and asks before risky changes.
+            Paste one line into Cursor, Windsurf, Claude Code, or another coding chat. The agent installs local guardrails, checks the risky parts first, and asks before changes that can expose secrets, spend money, alter data, or push to the wrong place.
           </p>
           <div class="trust-strip" aria-label="Product highlights" data-i18n-aria-label="productHighlightsLabel">
-            <span data-i18n="trustOne">5 local safety gates</span>
-            <span data-i18n="trustTwo">No secret values printed</span>
-            <span data-i18n="trustThree">Cost-aware architecture before new services</span>
+            <span data-i18n="trustOne">Paste into any coding chat</span>
+            <span data-i18n="trustTwo">Secrets stay redacted</span>
+            <span data-i18n="trustThree">Cost and deploy checks before new infrastructure</span>
           </div>
         </div>
 
@@ -105,7 +109,7 @@
                   <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                 </svg>
               </span>
-              <span class="magic-prompt-label" data-i18n="magicPromptLabel">Copy this sentence for your AI agent</span>
+              <span class="magic-prompt-label" data-i18n="magicPromptLabel">One line to paste into your AI agent</span>
             </div>
             <div class="magic-prompt-body">
               <code id="magic-prompt-text" data-i18n="magicPromptText">Apply VibeGuard to this project: https://github.com/taehwandev/VibeGuard</code>
@@ -129,6 +133,9 @@
               </svg>
               <span data-i18n="githubButton">Open GitHub</span>
             </a>
+            <a class="button secondary" href="https://github.com/taehwandev/VibeGuard/blob/main/docs/ko.md">
+              <span data-i18n="docsButton">Read the guide</span>
+            </a>
           </div>
         </div>
       </section>
@@ -136,7 +143,7 @@
       <!-- AUDIENCE SECTION (비개발자 vs 개발자) -->
       <section class="band audience" id="audience">
         <div class="section-container">
-          <h2 class="section-title text-center" data-i18n="audienceHeading">A small safety layer for people who let AI edit real projects</h2>
+          <h2 class="section-title text-center" data-i18n="audienceHeading">Two paths: paste-and-go for users, local guardrails for maintainers</h2>
           <div class="audience-grid">
             <!-- Non-developer Card -->
             <article class="audience-card audience-nondev">
@@ -148,10 +155,10 @@
                   <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
               </div>
-              <h3 class="card-title" data-i18n="nonDevTitle">For non-developers</h3>
-              <p class="card-subtitle" data-i18n="nonDevSub">No terminal typing required</p>
+              <h3 class="card-title" data-i18n="nonDevTitle">If you use an AI coding chat</h3>
+              <p class="card-subtitle" data-i18n="nonDevSub">Start without terminal work</p>
               <p class="card-description" data-i18n="nonDevText">
-                You do not need to understand Git, CLI commands, or local setup. Paste the sentence into your AI assistant's chat window. VibeGuard guides the agent through local safety checks and asks before risky actions like spending money, exposing credentials, or changing data.
+                You can paste the instruction and let the agent do the setup. VibeGuard tells the agent to inspect the repo, fix low-risk guardrail gaps, and stop before actions that need your approval.
               </p>
             </article>
 
@@ -163,11 +170,54 @@
                   <polyline points="8 6 2 12 8 18"></polyline>
                 </svg>
               </div>
-              <h3 class="card-title" data-i18n="devTitle">For developers</h3>
-              <p class="card-subtitle" data-i18n="devSub">Reduce costly and destructive mistakes</p>
+              <h3 class="card-title" data-i18n="devTitle">If you maintain the repo</h3>
+              <p class="card-subtitle" data-i18n="devSub">Keep AI edits inside known boundaries</p>
               <p class="card-description" data-i18n="devText">
-                Flag hard-coded secrets, risky database scripts, production actions, paid-service changes, and unnecessary infrastructure before an AI agent moves too far. VibeGuard also installs managed agent instructions (AGENTS.md) and local git checks so safer habits stay with the project.
+                VibeGuard adds managed AGENTS.md instructions, audit output, and optional git hooks. It catches hard-coded secrets, risky scripts, public-repo push hazards, paid-service drift, and client/server credential mistakes before they become release problems.
               </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- AGENTPLAYBOOK SECTION -->
+      <section class="band audience" id="playbook">
+        <div class="section-container">
+          <h2 class="section-title text-center" data-i18n="playbookHeading">Use VibeGuard with AgentPlaybook when the work needs a full agent workflow.</h2>
+          <div class="audience-grid">
+            <article class="audience-card audience-nondev">
+              <div class="card-icon-wrapper">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  <path d="m9 11 2 2 4-4"></path>
+                </svg>
+              </div>
+              <h3 class="card-title" data-i18n="playbookVibeTitle">VibeGuard is the safety gate</h3>
+              <p class="card-subtitle" data-i18n="playbookVibeSub">Before risky edits</p>
+              <p class="card-description" data-i18n="playbookVibeText">
+                It checks secrets, cost, data, deploy, server boundary, and repository risk before an AI agent changes a project.
+              </p>
+            </article>
+
+            <article class="audience-card audience-dev">
+              <div class="card-icon-wrapper">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path>
+                  <path d="M8 7h8"></path>
+                  <path d="M8 11h8"></path>
+                </svg>
+              </div>
+              <h3 class="card-title" data-i18n="playbookAgentTitle">AgentPlaybook is the execution playbook</h3>
+              <p class="card-subtitle" data-i18n="playbookAgentSub">Plan, build, verify, review</p>
+              <p class="card-description" data-i18n="playbookAgentText">
+                It gives agents reusable workflow, engineering, review, platform, and handoff guidance without copying long prompt files into every repo.
+              </p>
+              <div class="hero-actions">
+                <a class="button secondary" href="https://agentplaybook.thdev.app" target="_blank" rel="noopener noreferrer">
+                  <span data-i18n="playbookButton">Open AgentPlaybook</span>
+                </a>
+              </div>
             </article>
           </div>
         </div>
@@ -177,24 +227,24 @@
       <section class="band how" id="how">
         <div class="section-container">
           <div class="section-heading">
-            <p class="eyebrow" data-i18n="howEyebrow">3-step workflow</p>
-            <h2 class="section-title" data-i18n="howTitle">Just copy once. The AI does the checking.</h2>
+            <p class="eyebrow" data-i18n="howEyebrow">Workflow</p>
+            <h2 class="section-title" data-i18n="howTitle">The agent does the setup, but the risky calls still come back to you.</h2>
           </div>
           <div class="steps">
             <article class="step-card">
               <span class="step-num">1</span>
-              <h3 data-i18n="stepOneTitle">1. Copy the instruction</h3>
-              <p data-i18n="stepOneText">Copy the single-sentence VibeGuard directive prepared above.</p>
+              <h3 data-i18n="stepOneTitle">1. Paste the instruction</h3>
+              <p data-i18n="stepOneText">Use the line above in the AI coding chat that is already working on your project.</p>
             </article>
             <article class="step-card">
               <span class="step-num">2</span>
-              <h3 data-i18n="stepTwoTitle">2. Paste to your AI assistant</h3>
-              <p data-i18n="stepTwoText">Paste it directly into Cursor, Windsurf, Claude Code, or any coding agent chat.</p>
+              <h3 data-i18n="stepTwoTitle">2. Let it run the checks</h3>
+              <p data-i18n="stepTwoText">The agent installs or refreshes local guardrails, runs an audit, and applies only low-risk safety fixes.</p>
             </article>
             <article class="step-card">
               <span class="step-num">3</span>
-              <h3 data-i18n="stepThreeTitle">3. AI checks safely & pauses on risk</h3>
-              <p data-i18n="stepThreeText">The agent applies VibeGuard to inspect the codebase, handles low-risk fixes when safe, and stops to ask before destructive, costly, production, or credential-sensitive work.</p>
+              <h3 data-i18n="stepThreeTitle">3. Approve the risky parts</h3>
+              <p data-i18n="stepThreeText">If the next step can delete data, expose credentials, spend money, deploy production, or push sensitive files, VibeGuard tells the agent to stop and ask.</p>
             </article>
           </div>
         </div>
@@ -205,7 +255,7 @@
         <div class="section-container">
           <div class="section-heading">
             <p class="eyebrow" data-i18n="checksEyebrow">Safety guardrails</p>
-            <h2 class="section-title" data-i18n="checksTitle">Built to reduce common AI coding mistakes.</h2>
+            <h2 class="section-title" data-i18n="checksTitle">The checks are practical: secrets, cost, data, deployment, and Git.</h2>
           </div>
           <div class="check-grid">
             <div class="check-card">
@@ -215,8 +265,8 @@
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
               </span>
-              <h3 data-i18n="securityTitle">Secret Quarantine</h3>
-              <p data-i18n="securityText">Detects likely hard-coded secrets and can move simple JS, TS, and Python assignments into gitignored env files without printing the values.</p>
+              <h3 data-i18n="securityTitle">Secret handling</h3>
+              <p data-i18n="securityText">Detects likely hard-coded secrets without printing the value. Simple JS, TS, and Python assignments can be moved into an ignored env file.</p>
             </div>
             <div class="check-card">
               <span class="check-icon">
@@ -224,8 +274,8 @@
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                 </svg>
               </span>
-              <h3 data-i18n="envTitle">Env Protection</h3>
-              <p data-i18n="envText">Ensures local env files are strictly gitignored while maintaining value-free `.env.example` templates.</p>
+              <h3 data-i18n="envTitle">Env file hygiene</h3>
+              <p data-i18n="envText">Keeps runtime env files ignored and keeps shareable env templates value-free.</p>
             </div>
             <div class="check-card">
               <span class="check-icon">
@@ -234,8 +284,8 @@
                   <path d="M3 5v6c0 1.66 4 3 9 3s9-1.34 9-3V5M3 11v6c0 1.66 4 3 9 3s9-1.34 9-3v-6"></path>
                 </svg>
               </span>
-              <h3 data-i18n="dataTitle">Data Loss Pause</h3>
-              <p data-i18n="dataText">Flags database drops, reset scripts, and destructive shell commands (`rm -rf`) so the agent pauses before data loss risks.</p>
+              <h3 data-i18n="dataTitle">Data-loss pause</h3>
+              <p data-i18n="dataText">Flags database resets, destructive scripts, and shell commands that can remove data before the agent runs them.</p>
             </div>
             <div class="check-card">
               <span class="check-icon">
@@ -244,8 +294,8 @@
                   <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                 </svg>
               </span>
-              <h3 data-i18n="costTitle">Cost-Aware Architecture</h3>
-              <p data-i18n="costText">Pushes the agent to reuse shared server-side helpers for repeated web calls, cache stable data on the server, and use batching or rate limits before adding paid services or recurring infrastructure.</p>
+              <h3 data-i18n="costTitle">Cost-aware architecture</h3>
+              <p data-i18n="costText">Pushes repeated API, provider, and model calls toward shared server-side helpers, caching, batching, and rate limits before adding paid services.</p>
             </div>
             <div class="check-card">
               <span class="check-icon">
@@ -254,8 +304,8 @@
                   <polyline points="22 4 12 14.01 9 11.01"></polyline>
                 </svg>
               </span>
-              <h3 data-i18n="gitTitle">Git Gates</h3>
-              <p data-i18n="gitText">Hooks into local git pre-commit and pre-push scripts to double-check code safety before remote pushes.</p>
+              <h3 data-i18n="gitTitle">Repository checks</h3>
+              <p data-i18n="gitText">Reviews the remote, repository visibility, and changed files before commit or push, with extra care for public or unknown-visibility repos.</p>
             </div>
             <div class="check-card">
               <span class="check-icon">
@@ -267,8 +317,8 @@
                   <line x1="12" y1="22" x2="12" y2="18"></line>
                 </svg>
               </span>
-              <h3 data-i18n="boundaryTitle">Server/Client Boundary</h3>
-              <p data-i18n="boundaryText">Checks for third-party secrets and privileged credentials that should stay on the server instead of client-side code.</p>
+              <h3 data-i18n="boundaryTitle">Server boundary</h3>
+              <p data-i18n="boundaryText">Keeps provider keys, database URLs, service-role keys, and webhook secrets on the server side.</p>
             </div>
           </div>
         </div>
@@ -278,7 +328,7 @@
       <section class="band preview-section" id="preview">
         <div class="section-container">
           <div class="terminal-wrapper">
-            <h2 class="terminal-title text-center" data-i18n="terminalTitle">Agent setup preview</h2>
+            <h2 class="terminal-title text-center" data-i18n="terminalTitle">What the agent reports back</h2>
 
             <div class="simulator-tabs" role="tablist" aria-label="Preview mode selector" data-i18n-aria-label="simulatorTabsLabel">
               <button class="tab-button is-active" type="button" role="tab" aria-selected="true" data-tab="chat" data-i18n="tabChat">AI chat simulation</button>
@@ -290,7 +340,7 @@
               <div class="chat-mockup" aria-label="Simulated AI chat workspace" data-i18n-aria-label="chatMockupLabel">
                 <div class="chat-header">
                   <span class="chat-header-dot"></span>
-                  <span class="chat-header-title" data-i18n="chatHeaderTitle">Cursor / Windsurf AI assistant</span>
+                  <span class="chat-header-title" data-i18n="chatHeaderTitle">Cursor / Windsurf / Claude Code</span>
                 </div>
                 <div class="chat-body">
                   <!-- User Message -->
@@ -302,13 +352,13 @@
                   <div class="chat-bubble chat-bubble-ai">
                     <div class="chat-avatar" data-i18n="chatAgentName">AI coding assistant</div>
                     <div class="chat-content">
-                      <p data-i18n="chatAgentIntro" style="margin: 0 0 10px 0;">Understood. I will apply VibeGuard, inspect the project, and install local safety gates.</p>
+                      <p data-i18n="chatAgentIntro" style="margin: 0 0 10px 0;">I will apply VibeGuard, inspect the project, and install the local safety gates.</p>
                       <div class="chat-logs">
-                        <span data-i18n="chatAgentLogGit">[ok] Checked gitignore env protection rules.</span>
-                        <span data-i18n="chatAgentLogAgents">[ok] Created AGENTS.md safety instructions.</span>
-                        <span data-i18n="chatAgentLogHooks">[ok] Installed pre-commit safety hooks.</span>
+                        <span data-i18n="chatAgentLogGit">[ok] Checked env ignore rules.</span>
+                        <span data-i18n="chatAgentLogAgents">[ok] Updated AGENTS.md safety instructions.</span>
+                        <span data-i18n="chatAgentLogHooks">[ok] Installed commit and push checks.</span>
                       </div>
-                      <p data-i18n="chatAgentOutro" style="margin: 10px 0 0 0;">VibeGuard is applied. Before database deletion, large paid API usage, or sensitive production deploys, I will pause and ask for approval.</p>
+                      <p data-i18n="chatAgentOutro" style="margin: 10px 0 0 0;">VibeGuard is applied. I will continue with the task, but I will stop before database deletion, paid-service expansion, sensitive production deploys, or risky pushes.</p>
                     </div>
                   </div>
                 </div>
@@ -326,12 +376,12 @@
                 <pre><code id="terminal-output" data-i18n="terminalOutput">$ npx --yes @taehwandev/vibeguard@latest setup .
 
 Applied fixes:
-[ok] Updated .gitignore env protection rules.
-[ok] Created AGENTS.md VibeGuard instructions.
-[ok] Installed local security pre-commit hooks.
+✅ Updated .gitignore env protection rules.
+✅ Updated AGENTS.md VibeGuard instructions.
+✅ Installed local pre-commit and pre-push checks.
 
 [VibeGuard Audit Report]
-Overall: Ready</code></pre>
+Overall: ✅ Ready</code></pre>
               </div>
             </div>
           </div>
