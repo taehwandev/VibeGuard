@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -68,6 +69,31 @@ export function listFiles(root, options = {}) {
   return files;
 }
 
+export function listGitVisibleFiles(root, options = {}) {
+  if (!pathExists(path.join(root, ".git"))) return null;
+
+  const output = gitOutput(root, ["ls-files", "-co", "--exclude-standard"]);
+  if (output === null) return null;
+
+  const ignoreDirs = options.ignoreDirs ?? new Set();
+  const maxFileBytes = options.maxFileBytes ?? 1024 * 1024;
+  const files = [];
+
+  for (const relative of output.split(/\r?\n/).map((item) => item.trim()).filter(Boolean)) {
+    if (isInIgnoredDir(relative, ignoreDirs)) continue;
+
+    const fullPath = path.join(root, relative);
+    try {
+      const stat = fs.statSync(fullPath);
+      if (stat.isFile() && stat.size <= maxFileBytes) files.push(fullPath);
+    } catch {
+      // Ignore paths that disappeared between Git listing and file inspection.
+    }
+  }
+
+  return files;
+}
+
 export function relativePath(root, filePath) {
   return path.relative(root, filePath) || ".";
 }
@@ -129,3 +155,19 @@ export function isProbablyTextFile(filePath) {
   }
 }
 
+function gitOutput(root, args) {
+  try {
+    return execFileSync("git", args, {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+      timeout: 2000
+    }).trim();
+  } catch {
+    return null;
+  }
+}
+
+function isInIgnoredDir(relative, ignoreDirs) {
+  return relative.split(/[\\/]+/).some((segment) => ignoreDirs.has(segment));
+}

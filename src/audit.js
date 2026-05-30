@@ -13,6 +13,7 @@ import {
   isProbablyTextFile,
   lineNumberAt,
   listFiles,
+  listGitVisibleFiles,
   pathExists,
   readJsonIfExists,
   readTextIfExists,
@@ -511,7 +512,7 @@ function checkPaidIntegrations(root, report) {
 
 function checkFiles(root, report, options) {
   const maxFileLines = options.maxFileLines ?? 800;
-  const files = listFiles(root, { ignoreDirs: IGNORE_DIRS });
+  const files = listGitVisibleFiles(root, { ignoreDirs: IGNORE_DIRS }) ?? listFiles(root, { ignoreDirs: IGNORE_DIRS });
 
   for (const filePath of files) {
     const basename = path.basename(filePath);

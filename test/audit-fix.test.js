@@ -256,6 +256,33 @@ test("runtime env files are protected while existing env templates prevent dupli
   assert.equal(fs.existsSync(path.join(templateRoot, ".env.example")), false);
 });
 
+test("audit skips gitignored local files and generated output", () => {
+  const root = makeRealGitProject();
+  const secretValue = `sk-proj-${"f".repeat(24)}${"6".repeat(12)}`;
+  fs.writeFileSync(path.join(root, ".gitignore"), ".env copy.*\n.vercel/\n", "utf8");
+  fs.writeFileSync(path.join(root, ".env copy.local"), `OPENAI_API_KEY=${secretValue}\n`, "utf8");
+  fs.mkdirSync(path.join(root, ".vercel", "output"), { recursive: true });
+  fs.writeFileSync(path.join(root, ".vercel", "output", "bundle.js"), "export const generated = true;\n".repeat(1700), "utf8");
+
+  const report = auditProject(root);
+  assert.equal(report.summary.blocks, 0);
+  assert.equal(report.findings.some((finding) => finding.file?.includes(".env copy")), false);
+  assert.equal(report.findings.some((finding) => finding.file?.includes(".vercel")), false);
+});
+
+test("audit still scans tracked files that also match gitignore", () => {
+  const root = makeRealGitProject();
+  const secretValue = `sk-proj-${"g".repeat(24)}${"7".repeat(12)}`;
+  fs.writeFileSync(path.join(root, ".gitignore"), ".env copy.*\n", "utf8");
+  fs.writeFileSync(path.join(root, ".env copy.local"), `OPENAI_API_KEY=${secretValue}\n`, "utf8");
+  runGit(root, ["add", "-f", ".env copy.local"]);
+
+  const report = auditProject(root);
+  assert.equal(report.summary.blocks, 1);
+  assert.equal(report.findings.some((finding) => finding.file === ".env copy.local" && finding.severity === "block"), true);
+  assert.equal(JSON.stringify(sanitizeReport(report)).includes(secretValue), false);
+});
+
 test("prompt includes actionable guardrails", () => {
   const root = makeTempProject();
   const report = auditProject(root);
