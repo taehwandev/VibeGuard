@@ -114,7 +114,7 @@ test("init creates project policy and config", () => {
 
   const config = JSON.parse(fs.readFileSync(path.join(root, ".vibeguard.json"), "utf8"));
   assert.equal(config.mode, "guided");
-  assert.equal(config.display, "traffic-light");
+  assert.equal(config.display, "emoji");
   assert.equal(config.rulesPath, null);
   assert.equal(config.maxFileLines, 800);
   assert.equal(config.repository.visibility, "unknown");
@@ -527,10 +527,14 @@ test("audit report and prompt support Korean localization", () => {
 
   const formatted = formatAuditReport(report, { language: "ko" });
   assert.match(formatted, /전체 상태/);
+  assert.match(formatted, /✅ 진행 가능/);
+  assert.doesNotMatch(formatted, /🟢/);
   assert.match(formatted, /발견사항: 없음/);
 
   const prompt = buildAgentPrompt(report, "로그인 추가", { language: "ko" });
   assert.match(prompt, /사용자 요청/);
+  assert.match(prompt, /✅ 진행 가능/);
+  assert.doesNotMatch(prompt, /🟢/);
   assert.match(prompt, /비밀값을 발견하면 값을 출력하지 마세요/);
 });
 

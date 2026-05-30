@@ -56,8 +56,8 @@ AI coding chat:
 Apply https://github.com/taehwandev/VibeGuard to this project.
 ```
 
-The default audience is non-developers. VibeGuard should show a simple
-traffic-light status while the AI agent handles safe fixes behind the scenes.
+The default audience is non-developers. VibeGuard should show simple status
+with distinct emoji while the AI agent handles safe fixes behind the scenes.
 Developers can tune the behavior with `.vibeguard.json`.
 
 Give an agent this link, and it should install project guardrails, fix low-risk
@@ -128,7 +128,7 @@ mode is intentionally guided:
 ```json
 {
   "mode": "guided",
-  "display": "traffic-light",
+  "display": "emoji",
   "rulesPath": null,
   "maxFileLines": 800,
   "repository": {

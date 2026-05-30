@@ -60,7 +60,7 @@ function ensureConfig(projectRoot, options) {
 function defaultConfig(options) {
   return {
     mode: "guided",
-    display: "traffic-light",
+    display: "emoji",
     rulesPath: options.rulesPath ?? null,
     maxFileLines: 800,
     repository: {
@@ -137,7 +137,7 @@ prompt.
 
 ## Audience
 
-The default mode is for non-developers. Show traffic-light status, keep the
+The default mode is for non-developers. Show distinct status emoji, keep the
 summary simple, and handle safe fixes behind the scenes. Developers can adjust
 \`.vibeguard.json\` for stricter thresholds and project-specific rules.
 

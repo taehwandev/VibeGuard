@@ -1,6 +1,6 @@
 {
   "mode": "guided",
-  "display": "traffic-light",
+  "display": "emoji",
   "rulesPath": "~/Documents/KeyFlowVault/AgentPlaybook",
   "maxFileLines": 800,
   "repository": {

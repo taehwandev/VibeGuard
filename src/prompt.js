@@ -1,12 +1,6 @@
 import { normalizeLanguage, t } from "./i18n.js";
 import { sanitizePathForDisplay } from "./path-display.js";
-
-const STATUS_ICON = {
-  pass: "🟢",
-  warn: "🟡",
-  block: "🔴",
-  info: "🔵"
-};
+import { statusIcon } from "./status-icon.js";
 
 export function buildAgentPrompt(report, userRequest = "", options = {}) {
   const language = normalizeLanguage(options.language ?? report.language);
@@ -22,7 +16,7 @@ export function buildAgentPrompt(report, userRequest = "", options = {}) {
   lines.push("");
   lines.push(t(language, "prompt.auditStatus"));
   lines.push(`- ${t(language, "prompt.project")}: ${sanitizePathForDisplay(report.root)}`);
-  lines.push(`- ${t(language, "prompt.overall")}: ${STATUS_ICON[report.summary.status]} ${statusLabel(language, report.summary.status)}`);
+  lines.push(`- ${t(language, "prompt.overall")}: ${statusIcon(report.summary.status)} ${statusLabel(language, report.summary.status)}`);
   lines.push(`- ${t(language, "prompt.summary", {
     blocks: report.summary.blocks,
     warnings: report.summary.warnings,
@@ -32,7 +26,7 @@ export function buildAgentPrompt(report, userRequest = "", options = {}) {
   lines.push(`| ${t(language, "report.table.gate")} | ${t(language, "report.table.status")} | ${t(language, "report.table.message")} |`);
   lines.push("| --- | --- | --- |");
   for (const gate of Object.values(report.gates)) {
-    lines.push(`| ${gate.label} | ${STATUS_ICON[gate.status]} ${statusLabel(language, gate.status)} | ${gate.message} |`);
+    lines.push(`| ${gate.label} | ${statusIcon(gate.status)} ${statusLabel(language, gate.status)} | ${gate.message} |`);
   }
 
   if (report.findings.length > 0) {
@@ -40,7 +34,7 @@ export function buildAgentPrompt(report, userRequest = "", options = {}) {
     lines.push(t(language, "prompt.findings"));
     for (const finding of report.findings.slice(0, 12)) {
       const where = finding.file ? `${finding.file}${finding.line ? `:${finding.line}` : ""}` : "project";
-      lines.push(`- ${STATUS_ICON[finding.severity] ?? "🔵"} ${where}: ${finding.message}`);
+      lines.push(`- ${statusIcon(finding.severity)} ${where}: ${finding.message}`);
       if (finding.fixable) lines.push(`  - ${t(language, "prompt.fixable")}`);
     }
   }

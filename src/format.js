@@ -1,12 +1,6 @@
 import { normalizeLanguage, t } from "./i18n.js";
 import { relativePath, sanitizePathForDisplay } from "./path-display.js";
-
-const STATUS_ICON = {
-  pass: "🟢",
-  warn: "🟡",
-  block: "🔴",
-  info: "🔵"
-};
+import { statusIcon } from "./status-icon.js";
 
 export function formatAuditReport(report, options = {}) {
   const language = normalizeLanguage(options.language ?? report.language);
@@ -14,20 +8,20 @@ export function formatAuditReport(report, options = {}) {
   lines.push(t(language, "report.title"));
   lines.push("");
   lines.push(`${t(language, "report.project")}: ${sanitizePathForDisplay(report.root)}`);
-  lines.push(`${t(language, "report.overall")}: ${STATUS_ICON[report.summary.status]} ${statusLabel(language, report.summary.status)}`);
+  lines.push(`${t(language, "report.overall")}: ${statusIcon(report.summary.status)} ${statusLabel(language, report.summary.status)}`);
   lines.push(t(language, "report.scanned", { scanned: report.stats.scannedFiles, skipped: report.stats.skippedFiles }));
   lines.push("");
   lines.push(`| ${t(language, "report.table.gate")} | ${t(language, "report.table.status")} | ${t(language, "report.table.message")} |`);
   lines.push("| --- | --- | --- |");
   for (const [key, gate] of Object.entries(report.gates)) {
-    lines.push(`| ${gate.label} | ${STATUS_ICON[gate.status]} ${statusLabel(language, gate.status)} | ${gate.message} |`);
+    lines.push(`| ${gate.label} | ${statusIcon(gate.status)} ${statusLabel(language, gate.status)} | ${gate.message} |`);
   }
 
   if (report.findings.length > 0) {
     lines.push("");
     lines.push(`${t(language, "report.findings")}:`);
     for (const finding of report.findings.slice(0, options.limit ?? 20)) {
-      const icon = STATUS_ICON[finding.severity] ?? STATUS_ICON.info;
+      const icon = statusIcon(finding.severity);
       const location = finding.file ? ` ${relativePath(finding.file)}${finding.line ? `:${finding.line}` : ""}` : "";
       const fixable = finding.fixable ? " [fixable]" : "";
       lines.push(`- ${icon}${location}${fixable} ${finding.message}`);

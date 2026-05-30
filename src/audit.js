@@ -101,7 +101,7 @@ export function auditProject(projectPath, options = {}) {
     language,
     generatedAt: new Date().toISOString(),
     mode: config.mode ?? "guided",
-    display: config.display ?? "traffic-light",
+    display: config.display ?? "emoji",
     project: detectProject(root),
     rules: loadRuleLibrary(root, rulesPath),
     findings: [],
