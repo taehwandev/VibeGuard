@@ -352,6 +352,48 @@ test("audit blocks database connection strings without exposing values", () => {
   assert.equal(JSON.stringify(sanitizeReport(report)).includes("generated-password-123"), false);
 });
 
+test("audit ignores at signs in public http url paths and queries", () => {
+  const root = makeTempProject();
+  const googleFontUrl = ["https://fonts.googleapis.com/css2?family=Inter", "wght@900&text=KEYLOW"].join(":");
+  const emailSearchUrl = "https://example.com/search?q=user@example.com";
+  const scopedPackageUrl = "https://example.com/path/@scope/package";
+  fs.writeFileSync(
+    path.join(root, "route.tsx"),
+    [
+      `const fontUrl = "${googleFontUrl}";`,
+      `const emailSearchUrl = "${emailSearchUrl}";`,
+      `const scopedPackageUrl = "${scopedPackageUrl}";`
+    ].join("\n"),
+    "utf8"
+  );
+
+  const report = auditProject(root);
+  const blockingSecurityFindings = report.findings.filter(
+    (finding) => finding.category === "security" && finding.severity === "block"
+  );
+  assert.equal(blockingSecurityFindings.length, 0);
+});
+
+test("audit blocks credential-bearing database and http urls", () => {
+  const root = makeTempProject();
+  const databaseUrls = [
+    ["postgres://user", "generated-password-123@example.com:5432/db"].join(":"),
+    ["mysql://user", "generated-password-123@example.com/db"].join(":"),
+    ["mongodb+srv://user", "generated-password-123@example.com/db"].join(":")
+  ];
+  const privateHttpUrl = ["https://user", "generated-password-123@example.com/private"].join(":");
+  fs.writeFileSync(path.join(root, "links.txt"), [...databaseUrls, privateHttpUrl].join("\n"), "utf8");
+
+  const report = auditProject(root);
+  const blockingSecurityFindings = report.findings.filter(
+    (finding) => finding.category === "security" && finding.severity === "block"
+  );
+  assert.equal(blockingSecurityFindings.length, 4);
+  assert.equal(blockingSecurityFindings.filter((finding) => finding.message.includes("database connection string")).length, 3);
+  assert.equal(blockingSecurityFindings.some((finding) => finding.message.includes("URL with embedded credentials")), true);
+  assert.equal(JSON.stringify(sanitizeReport(report)).includes("generated-password-123"), false);
+});
+
 test("audit blocks sensitive git changes when repository visibility is public or unknown", () => {
   const root = makeRealGitProject();
   fs.writeFileSync(path.join(root, "package.json"), `${JSON.stringify({ name: "customer-app" }, null, 2)}\n`, "utf8");
@@ -446,6 +488,33 @@ test("evidence records Claude hook command execution without leaking secrets", (
   const parsed = JSON.parse(summary.stdout);
   assert.equal(parsed.commandCount, 1);
   assert.equal(parsed.checks.test.observed, true);
+});
+
+test("evidence redacts credential urls without redacting public at-sign urls", () => {
+  const root = makeTempProject();
+  const publicUrl = ["https://fonts.googleapis.com/css2?family=Inter", "wght@900&text=KEYLOW"].join(":");
+  const privateUrl = ["https://user", "generated-password-123@example.com/private"].join(":");
+  const hookInput = {
+    cwd: root,
+    hook_event_name: "PostToolUse",
+    tool_name: "Bash",
+    tool_input: {
+      command: `curl "${publicUrl}" && curl "${privateUrl}"`
+    },
+    tool_use_id: "toolu_test",
+    duration_ms: 42
+  };
+
+  const recorded = runCli(["evidence", "claude-hook", root, "--json"], {
+    input: JSON.stringify(hookInput)
+  });
+  assert.equal(recorded.status, 0);
+  assert.equal(recorded.stdout.includes(publicUrl), true);
+  assert.equal(recorded.stdout.includes("generated-password-123"), false);
+
+  const evidenceFile = fs.readFileSync(path.join(root, ".vibeguard", "session", "events.jsonl"), "utf8");
+  assert.equal(evidenceFile.includes(publicUrl), true);
+  assert.equal(evidenceFile.includes("generated-password-123"), false);
 });
 
 test("evidence records Claude hook failures and extracts exit code", () => {

@@ -1,5 +1,6 @@
 import path from "node:path";
 import { appendUniqueLines, pathExists, readJsonIfExists, readTextIfExists, writeTextFile } from "./fs-utils.js";
+import { redactCredentialUrlSecrets } from "./secret-url.js";
 
 const EVIDENCE_FILE = path.join(".vibeguard", "session", "events.jsonl");
 const CLAUDE_LOCAL_SETTINGS = path.join(".claude", "settings.local.json");
@@ -27,7 +28,6 @@ const REDACTION_PATTERNS = [
   /\bsk_live_[A-Za-z0-9]{12,}\b/g,
   /\bAKIA[0-9A-Z]{16}\b/g,
   /\bxox[baprs]-[A-Za-z0-9-]{12,}\b/g,
-  /\b(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|redis(?:s)?)?:\/\/[^:\s"'`]+:[^@\s"'`]+@[^\s"'`]+/g,
   /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----[\s\S]*?-----END (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/g
 ];
 
@@ -173,7 +173,8 @@ function sanitizeEvidenceEvent(event) {
 
 function redactText(value) {
   if (typeof value !== "string") return value ?? null;
-  return REDACTION_PATTERNS.reduce((next, pattern) => next.replace(pattern, "<redacted>"), value);
+  const redacted = REDACTION_PATTERNS.reduce((next, pattern) => next.replace(pattern, "<redacted>"), value);
+  return redactCredentialUrlSecrets(redacted);
 }
 
 function parseExitCode(error) {

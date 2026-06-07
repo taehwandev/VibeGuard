@@ -21,6 +21,7 @@ import {
 } from "./fs-utils.js";
 import { normalizeLanguage, t } from "./i18n.js";
 import { loadRuleLibrary } from "./rules.js";
+import { containsCredentialUrlSecret, findCredentialUrlSecretMatches } from "./secret-url.js";
 import { staleUpdateFinding } from "./update-policy.js";
 
 const IGNORE_DIRS = new Set([
@@ -47,10 +48,6 @@ const KNOWN_SECRET_PATTERNS = [
   { label: "Stripe live secret key", regex: /\bsk_live_[A-Za-z0-9]{20,}\b/g },
   { label: "AWS access key", regex: /\bAKIA[0-9A-Z]{16}\b/g },
   { label: "Slack token", regex: /\bxox[baprs]-[A-Za-z0-9-]{20,}\b/g },
-  {
-    label: "database connection string",
-    regex: /\b(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|redis(?:s)?)?:\/\/[^:\s"'`]+:[^@\s"'`]+@[^\s"'`]+/g
-  },
   { label: "Private key header", regex: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/g }
 ];
 
@@ -637,6 +634,20 @@ function scanKnownSecretValues(root, filePath, content, report) {
       });
     }
   }
+
+  for (const match of findCredentialUrlSecretMatches(content)) {
+    if (isInGeneratedSecretFinding(report, relative, match.index)) continue;
+
+    addFinding(report, {
+      severity: "block",
+      category: "security",
+      file: relative,
+      line: lineNumberAt(content, match.index),
+      message: t(report.language, "finding.knownSecret.message", { label: match.label }),
+      recommendation: t(report.language, "finding.knownSecret.recommendation"),
+      evidence: "<redacted>"
+    });
+  }
 }
 
 function scanEnvTemplateAssignments(root, filePath, content, report) {
@@ -709,6 +720,7 @@ function isDescriptiveSensitiveName(name) {
 }
 
 function matchesKnownSecretValue(value) {
+  if (containsCredentialUrlSecret(value)) return true;
   return KNOWN_SECRET_PATTERNS.some((pattern) => {
     const regex = new RegExp(pattern.regex.source);
     return regex.test(value);
