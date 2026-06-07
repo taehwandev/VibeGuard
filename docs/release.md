@@ -44,6 +44,29 @@ To write the computed version into `package.json`:
 npm run release:prepare
 ```
 
+## Artifacts And Deployment Targets
+
+VibeGuard has two production surfaces:
+
+- CLI package: `@taehwandev/vibeguard` on npm.
+- Static website: GitHub Pages from `site/`.
+
+The CLI does not have a separate compile or bundle step. `package.json` exposes
+`src/cli.js` directly through the `bin` field, so the production artifact check
+is package assembly:
+
+```bash
+npm pack --dry-run
+```
+
+Use this as the production build equivalent for CLI release work. It verifies
+which files would ship in the npm tarball without publishing anything.
+
+The static website is not part of the npm release. Changes under `site/` deploy
+through `.github/workflows/deploy-pages.yml` when they are pushed to `main`, or
+when that workflow is run manually. Documentation-only or CLI-only changes do
+not trigger a Pages deploy unless `site/` or the Pages workflow changed.
+
 ## GitHub Release Flow
 
 Do not publish npm releases from a local machine. npm releases are published by
@@ -70,6 +93,25 @@ Release steps:
 The workflow checks out the GitHub Release tag, verifies it matches
 `package.json`, runs tests and strict audit, checks package contents, then
 publishes to npm.
+
+If `node src/cli.js audit . --strict` reports stale guardrails, run the approved
+VibeGuard update flow first, then rerun the strict audit. If it reports a
+structural warning, either fix the structure before release or record the
+accepted release risk before tagging.
+
+## Website Deployment Flow
+
+The website deploy is GitHub Pages, not npm. Use it only for `site/` changes or
+Pages workflow changes:
+
+1. Review the `site/` diff.
+2. Run a narrow static smoke check by opening or serving `site/index.html` when
+   practical.
+3. Push the change to `main`.
+4. Confirm the `Deploy Pages` workflow succeeds.
+
+The workflow uploads the `site/` directory as the Pages artifact and deploys it
+to the configured GitHub Pages environment.
 
 ## npm Authentication
 
