@@ -2,6 +2,7 @@ node_modules/
 coverage/
 .DS_Store
 .vibeguard/
+.agentplaybook/
 .claude/settings.local.json
 .antigravitycli/
 .codex/
