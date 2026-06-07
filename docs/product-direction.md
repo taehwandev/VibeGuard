@@ -94,6 +94,9 @@ For typical web projects, the default recommendation should be:
 - commonize repeated API/model/provider access behind shared server-side helpers
   or endpoints,
 - keep provider SDK setup and privileged calls server-side,
+- keep development, staging, and production URLs, API origins,
+  redirect/callback URLs, and asset hosts in platform config instead of
+  hard-coded source values,
 - cache stable or slow-changing data on the server,
 - batch repeated requests and add rate limits before exposing expensive paths,
 - avoid duplicating client-side fetching logic across components when one shared

@@ -30,6 +30,9 @@ Rules:
   logs, GitHub secrets, deployment settings, servers, or files; rotate them and
   enter fresh values only through local provider UI or secret-store prompts.
 - Preserve existing repo-local instructions.
+- Keep environment-specific URLs, API origins, redirect/callback URLs, and
+  asset hosts in platform config when they differ between development, staging,
+  and production; do not hard-code those values in source.
 - Stop and ask before destructive, costly, production, credential, or
   data-changing work.
 - Before commit or push, verify `git remote -v`, repository visibility, and
@@ -110,6 +113,8 @@ Audit exit codes:
 - Adds safe env ignore rules.
 - Keeps runtime env files ignored and env templates such as `.env.example` and
   `.env.sample` value-free.
+- Guides agents to read environment-specific URLs from platform config instead
+  of hard-coding development, staging, or production addresses in source.
 - Detects likely hard-coded secrets without printing secret values.
 - Quarantines simple JS/TS/Python hard-coded secrets with `--fix`.
 - Installs local `pre-commit` and `pre-push` hooks for another safety check

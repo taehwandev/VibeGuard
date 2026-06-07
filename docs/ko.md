@@ -36,6 +36,7 @@ VIBEGUARD_LANG=ko vibeguard audit .
 
 - 비밀값: 하드코딩된 API key, token, database URL 후보를 감지하되 값을 출력하지 않습니다.
 - env 파일: `.env`, `.env.local` 같은 런타임 env 파일은 Git에서 제외하고, `.env.example` 같은 템플릿에는 실제 값을 넣지 않게 합니다.
+- 환경별 주소: 개발/스테이징/운영 URL, API origin, redirect/callback URL, asset host가 다르면 플랫폼별 설정에서 읽게 하고 소스 코드에 하드코딩하지 않게 합니다.
 - 데이터 손실: DB reset, drop, destructive script, `rm -rf` 같은 작업 앞에서 멈추게 합니다.
 - 비용: 새 유료 서비스, 모델 호출, 클라우드 리소스, 반복 비용 인프라를 추가하기 전에 기존 코드, 서버 측 공통 helper, 캐시, batch, rate limit을 먼저 검토하게 합니다.
 - 서버 경계: provider key, service-role key, webhook secret처럼 서버에 있어야 할 값이 클라이언트 코드로 이동하지 않게 합니다.

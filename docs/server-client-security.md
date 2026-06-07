@@ -34,7 +34,10 @@ When an AI agent moves logic between server and client code:
 5. Add rate limits or quota controls before connecting the endpoint to paid
    services.
 6. Return only the minimum data the client needs.
-7. Keep env templates such as `.env.example` and `.env.sample` value-free and
+7. Keep environment-specific URLs, API origins, redirect/callback URLs, and
+   asset hosts in platform config when they differ between development, staging,
+   and production; do not hard-code those values in source.
+8. Keep env templates such as `.env.example` and `.env.sample` value-free and
    document only variable names or placeholders.
 
 ## Framework Notes

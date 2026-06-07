@@ -82,6 +82,9 @@ approves the next risky step.
   provider UI or secret-store prompt.
 - Keep real secrets in ignored local env files only.
 - Keep env templates such as `.env.example` and `.env.sample` value-free.
+- Keep environment-specific URLs, API origins, redirect/callback URLs, and asset
+  hosts in platform config when they differ between development, staging, and
+  production; do not hard-code those values in source.
 - Keep provider keys, database URLs, service-role keys, signing secrets, and
   webhook secrets server-side only.
 - Ask before deleting data, running migrations, deploying to production,

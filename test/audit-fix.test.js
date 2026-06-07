@@ -85,6 +85,12 @@ test("init creates project policy and config", () => {
   assert.ok(fs.existsSync(path.join(root, ".git", "hooks", "pre-commit")));
   assert.ok(fs.existsSync(path.join(root, ".git", "hooks", "pre-push")));
 
+  const policy = fs.readFileSync(path.join(root, "VIBEGUARD.md"), "utf8");
+  assert.match(policy, /Environment-Specific Configuration Rule/);
+  assert.match(policy, /web env\/deployment variables/);
+  assert.match(policy, /Android `local\.properties` or Gradle/);
+  assert.match(policy, /iOS `\.xcconfig`/);
+
   const agentInstructions = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");
   assert.match(agentInstructions, /<!-- vibeguard:start version=1 -->/);
   assert.match(agentInstructions, /Keep VibeGuard scoped to guardrails/);
@@ -96,6 +102,7 @@ test("init creates project policy and config", () => {
   assert.match(agentInstructions, /If the user pastes a secret in chat/);
   assert.match(agentInstructions, /Prefer cost-aware architecture/);
   assert.match(agentInstructions, /commonize repeated API\/model\/provider calls/);
+  assert.match(agentInstructions, /environment-specific URLs/);
   assert.match(
     agentInstructions,
     /npx --yes @taehwandev\/vibeguard@latest audit \./
@@ -294,6 +301,7 @@ test("prompt includes actionable guardrails", () => {
   assert.match(prompt, /do not claim verification that was not observed/);
   assert.match(prompt, /Prefer cost-aware architecture/);
   assert.match(prompt, /commonize repeated API\/model\/provider calls/);
+  assert.match(prompt, /environment-specific URLs/);
   assert.match(prompt, /verify `git remote -v`, repository visibility, and changed files/);
   assert.match(prompt, /If the user pastes a secret in chat/);
 });

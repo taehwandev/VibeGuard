@@ -171,6 +171,15 @@ shared server-side helpers or endpoints, cache stable or slow-changing data on
 the server, batch repeated requests, and add rate limits before exposing a path
 that can create cost or quota pressure.
 
+## Environment-Specific Configuration Rule
+
+Do not hard-code environment-specific web URLs, API origins, redirect/callback
+URLs, or asset hosts in source code. When values differ between development,
+staging, and production, read them from the platform's normal configuration
+mechanism: web env/deployment variables, Android \`local.properties\` or Gradle
+properties, and iOS \`.xcconfig\`, scheme environment variables, or build
+settings. Shared templates may document only names and placeholders.
+
 ## Required Workflow
 
 1. Run \`vibeguard audit .\`.
@@ -193,7 +202,7 @@ deployment, or credentials:
 2. If the audit reports stale VibeGuard guardrails, run \`npx --yes @taehwandev/vibeguard@latest update .\` once, then rerun \`vibeguard audit .\`. The default refresh interval is 7 days; do not update more often unless the user asks or the audit reports stale guardrails.
 3. If \`vibeguard\` is unavailable, run \`npx --yes @taehwandev/vibeguard@latest audit .\` instead and use the same \`npx --yes @taehwandev/vibeguard@latest ...\` form for fixes.
 4. If fixable findings exist, run \`vibeguard audit . --fix\` before implementing.
-5. Never print detected secret values. Keep real secrets only in ignored runtime env files and keep env templates such as \`.env.example\` and \`.env.sample\` value-free.
+5. Never print detected secret values. Keep real secrets only in ignored runtime env files and keep env templates such as \`.env.example\` and \`.env.sample\` value-free. Do not hard-code environment-specific URLs, API origins, redirect/callback URLs, or asset hosts in source; use the platform's normal local or deployment config mechanism instead.
 6. Ask before deleting data, running migrations, deploying to production, increasing paid API/model usage, adding recurring infrastructure, or changing credentials.
 7. Prefer cost-aware architecture. Before adding a paid service, database, queue, background worker, model call, analytics SDK, or cloud resource, explain why existing code or a simpler local/server-side design is insufficient.
 8. For web apps, commonize repeated API/model/provider calls behind shared server-side helpers or endpoints. Prefer server-side caching, batching, and rate limits before adding new client-side call paths.

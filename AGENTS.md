@@ -15,6 +15,10 @@ agents.
   secret-store prompts.
 - Treat auto-fixes as safety fixes: ignored env files, example env files, and
   simple hard-coded secret quarantine only.
+- Treat environment-specific addresses as configuration: generated instructions
+  should require web URLs, API origins, redirect/callback URLs, and asset hosts
+  to come from the platform's normal local or deployment config mechanism when
+  values differ between development, staging, and production.
 - Treat cost-aware architecture as a core guardrail: generated instructions
   should push agents to prefer existing code, local/static behavior,
   server-side reuse, caching, batching, and rate limits before adding paid
