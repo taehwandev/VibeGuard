@@ -1,6 +1,7 @@
 node_modules/
 coverage/
 .DS_Store
+# VibeGuard local state
 .vibeguard/
 .agentplaybook/
 .claude/settings.local.json
