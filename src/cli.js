@@ -26,6 +26,16 @@ function main() {
     const rawArgs = process.argv.slice(2);
     const parsed = parseArgs(rawArgs);
     const language = resolveLanguage(parsed.flags.lang);
+    const packageInfo = readPackageInfo();
+
+    if (parsed.flags.version || parsed.command === "version") {
+      if (parsed.flags.json) {
+        process.stdout.write(`${JSON.stringify(packageInfo, null, 2)}\n`);
+      } else {
+        process.stdout.write(`${packageInfo.version}\n`);
+      }
+      return;
+    }
 
     if (rawArgs.length === 0 || parsed.command === "--help" || parsed.command === "-h" || parsed.flags.help) {
       process.stdout.write(cliHelp(language));
@@ -161,6 +171,10 @@ function parseArgs(args) {
       parsed.flags.help = true;
       continue;
     }
+    if (arg === "--version" || arg === "-v") {
+      parsed.flags.version = true;
+      continue;
+    }
     if (arg === "--fix") {
       parsed.flags.fix = true;
       continue;
@@ -252,4 +266,14 @@ function requestFromPositionals(positionals, projectRoot) {
   const candidate = path.resolve(expandHome(positionals[0]));
   if (candidate === projectRoot) return positionals.slice(1).join(" ");
   return positionals.join(" ");
+}
+
+function readPackageInfo() {
+  const packagePath = new URL("../package.json", import.meta.url);
+  const raw = fs.readFileSync(packagePath, "utf8");
+  const pkg = JSON.parse(raw);
+  return {
+    name: pkg.name ?? "@taehwandev/vibeguard",
+    version: pkg.version ?? "0.0.0"
+  };
 }

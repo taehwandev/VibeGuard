@@ -80,6 +80,7 @@ available at https://vibeguard.thdev.app/.
 npx --yes @taehwandev/vibeguard@latest setup .
 vibeguard setup .
 vibeguard update .
+vibeguard version
 vibeguard audit .
 vibeguard audit . --fix
 vibeguard audit . --strict
@@ -105,6 +106,8 @@ Audit exit codes:
 - `0`: ready, or warnings without `--strict`
 - `1`: warnings in `--strict` mode
 - `2`: blocked
+
+`vibeguard version` prints the local package version without hitting the network.
 
 ## Agent Hook Fast Path
 

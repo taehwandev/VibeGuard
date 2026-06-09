@@ -7,6 +7,24 @@ import test from "node:test";
 import { initProject } from "../src/init.js";
 
 const CLI_PATH = new URL("../src/cli.js", import.meta.url);
+const PACKAGE_JSON_PATH = new URL("../package.json", import.meta.url);
+const PACKAGE_INFO = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, "utf8"));
+
+test("cli exposes local version without network access", () => {
+  const version = runCli(["--version"]);
+  assert.equal(version.status, 0);
+  assert.equal(version.stdout.trim(), PACKAGE_INFO.version);
+
+  const alias = runCli(["-v"]);
+  assert.equal(alias.status, 0);
+  assert.equal(alias.stdout.trim(), PACKAGE_INFO.version);
+
+  const command = runCli(["version", "--json"]);
+  assert.equal(command.status, 0);
+  const parsed = JSON.parse(command.stdout);
+  assert.equal(parsed.name, PACKAGE_INFO.name);
+  assert.equal(parsed.version, PACKAGE_INFO.version);
+});
 
 test("hook run writes compact changed-only status for agent hooks", () => {
   const root = makeRealGitProject();

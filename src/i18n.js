@@ -284,6 +284,7 @@ export function cliHelp(language) {
 사용법:
   vibeguard init|setup [project] [--rules <path>] [--lang <en|ko>]
   vibeguard update [project] [--rules <path>] [--lang <en|ko>]
+  vibeguard version [--json]
   vibeguard audit [project] [--fix] [--strict] [--json] [--rules <path>] [--lang <en|ko>]
   vibeguard hook run [project] [--event <name>] [--full] [--strict] [--quiet] [--json] [--rules <path>] [--lang <en|ko>]
   vibeguard hook status [project] [--json]
@@ -295,6 +296,7 @@ export function cliHelp(language) {
 예시:
   vibeguard setup . --lang ko
   vibeguard update .
+  vibeguard version
   vibeguard audit . --lang ko
   vibeguard audit . --fix --lang ko
   vibeguard audit . --strict --lang ko
@@ -317,6 +319,7 @@ export function cliHelp(language) {
 Usage:
   vibeguard init|setup [project] [--rules <path>] [--lang <en|ko>]
   vibeguard update [project] [--rules <path>] [--lang <en|ko>]
+  vibeguard version [--json]
   vibeguard audit [project] [--fix] [--strict] [--json] [--rules <path>] [--lang <en|ko>]
   vibeguard hook run [project] [--event <name>] [--full] [--strict] [--quiet] [--json] [--rules <path>] [--lang <en|ko>]
   vibeguard hook status [project] [--json]
@@ -328,6 +331,7 @@ Usage:
 Examples:
   vibeguard setup .
   vibeguard update .
+  vibeguard version
   vibeguard audit .
   vibeguard audit . --fix
   vibeguard audit . --strict
