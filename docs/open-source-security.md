@@ -15,6 +15,13 @@ The pre-commit gate blocks known unsafe states such as hard-coded secrets or
 unprotected local env files. The pre-push gate is stricter because the next step
 may publish code to a remote repository or open source package.
 
+Git hook file names are fixed by Git, so VibeGuard does not create a competing
+hook filename. It installs a named `vibeguard-preflight` managed block inside
+the existing hook file. Existing shell hook logic is preserved after the
+VibeGuard safety gate. Existing non-shell hooks are moved to a
+`.vibeguard-original` sibling and called by a shell wrapper after VibeGuard
+passes.
+
 If `vibeguard` is not installed locally, the hook falls back to:
 
 ```bash

@@ -144,6 +144,11 @@ manual review should continue to use `vibeguard audit .` or
 - Quarantines simple JS/TS/Python hard-coded secrets with `--fix`.
 - Installs local `pre-commit` and `pre-push` hooks for another safety check
   before commit and push.
+- Preserves existing Git hooks. VibeGuard installs a named
+  `vibeguard-preflight` managed block inside Git's fixed hook files and keeps
+  existing hook logic after the safety gate.
+- Provides a low-noise `hook run/status` path for agent runtime hooks that need
+  compact status without pulling a full audit report into the main agent context.
 - Checks Git remote naming, configured repository visibility, and changed files
   so sensitive changes do not get pushed to the wrong or public repository.
 - Records optional execution evidence from agent hooks so verification claims

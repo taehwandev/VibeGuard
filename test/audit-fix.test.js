@@ -110,11 +110,12 @@ test("init creates project policy and config", () => {
 
   const preCommit = fs.readFileSync(path.join(root, ".git", "hooks", "pre-commit"), "utf8");
   const prePush = fs.readFileSync(path.join(root, ".git", "hooks", "pre-push"), "utf8");
-  assert.match(preCommit, /# vibeguard:start version=1/);
+  assert.match(preCommit, /# vibeguard:managed-hook:start name=vibeguard-preflight version=2 hook=pre-commit/);
+  assert.match(preCommit, /Managed by VibeGuard \(@taehwandev\/vibeguard\)/);
   assert.match(preCommit, /vibeguard audit \./);
   assert.doesNotMatch(preCommit, /npx --yes @taehwandev\/vibeguard@latest update \./);
   assert.doesNotMatch(preCommit, /--strict/);
-  assert.match(prePush, /# vibeguard:start version=1/);
+  assert.match(prePush, /# vibeguard:managed-hook:start name=vibeguard-preflight version=2 hook=pre-push/);
   assert.match(prePush, /vibeguard audit \. --strict/);
   assert.doesNotMatch(prePush, /npx --yes @taehwandev\/vibeguard@latest update \./);
   assert.equal((fs.statSync(path.join(root, ".git", "hooks", "pre-commit")).mode & 0o111) > 0, true);
@@ -179,14 +180,16 @@ test("init preserves existing shell hooks while adding VibeGuard checks", () => 
   const root = makeTempProject();
   const hooksRoot = path.join(root, ".git", "hooks");
   fs.mkdirSync(hooksRoot, { recursive: true });
-  fs.writeFileSync(path.join(hooksRoot, "pre-commit"), "#!/bin/sh\necho existing hook\n", "utf8");
+  fs.writeFileSync(path.join(hooksRoot, "pre-commit"), "#!/bin/sh\nset -e\necho existing hook\n", "utf8");
 
   const applied = initProject(root);
   assert.ok(applied.includes("Added VibeGuard check to existing pre-commit hook."));
 
   const preCommit = fs.readFileSync(path.join(hooksRoot, "pre-commit"), "utf8");
+  assert.match(preCommit, /^#!\/bin\/sh\n/);
   assert.match(preCommit, /echo existing hook/);
-  assert.match(preCommit, /# vibeguard:start version=1/);
+  assert.match(preCommit, /# vibeguard:managed-hook:start name=vibeguard-preflight version=2 hook=pre-commit/);
+  assert.ok(preCommit.indexOf("vibeguard:managed-hook:start") < preCommit.indexOf("set -e"));
 });
 
 test("init wraps existing non-shell hooks instead of overwriting them", () => {
@@ -200,9 +203,42 @@ test("init wraps existing non-shell hooks instead of overwriting them", () => {
 
   const prePush = fs.readFileSync(path.join(hooksRoot, "pre-push"), "utf8");
   const original = fs.readFileSync(path.join(hooksRoot, "pre-push.vibeguard-original"), "utf8");
-  assert.match(prePush, /# vibeguard:start version=1/);
+  assert.match(prePush, /# vibeguard:managed-hook:start name=vibeguard-preflight version=2 hook=pre-push/);
   assert.match(prePush, /vibeguard-original/);
   assert.match(original, /existing hook/);
+});
+
+test("init migrates legacy VibeGuard hook markers while preserving existing shell hook body", () => {
+  const root = makeTempProject();
+  const hooksRoot = path.join(root, ".git", "hooks");
+  fs.mkdirSync(hooksRoot, { recursive: true });
+  fs.writeFileSync(
+    path.join(hooksRoot, "pre-commit"),
+    [
+      "#!/bin/sh",
+      "",
+      "echo before",
+      "",
+      "# vibeguard:start version=1",
+      "echo old VibeGuard hook",
+      "# vibeguard:end",
+      "",
+      "echo after"
+    ].join("\n"),
+    "utf8"
+  );
+
+  const applied = initProject(root);
+  assert.ok(applied.includes("Updated pre-commit VibeGuard hook."));
+
+  const preCommit = fs.readFileSync(path.join(hooksRoot, "pre-commit"), "utf8");
+  assert.doesNotMatch(preCommit, /echo old VibeGuard hook/);
+  assert.doesNotMatch(preCommit, /# vibeguard:start version=1/);
+  assert.match(preCommit, /# vibeguard:managed-hook:start name=vibeguard-preflight version=2 hook=pre-commit/);
+  assert.match(preCommit, /echo before/);
+  assert.match(preCommit, /echo after/);
+  assert.ok(preCommit.indexOf("vibeguard:managed-hook:start") < preCommit.indexOf("echo before"));
+  assert.ok(preCommit.indexOf("echo before") < preCommit.indexOf("echo after"));
 });
 
 test("fix creates env example names from existing local env files", () => {

@@ -3,10 +3,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathExists, readTextIfExists, writeTextFile } from "./fs-utils.js";
 
-const HOOK_RULE_START_PATTERN = /# (?:vibeguard|vibe-guard):start(?: version=\d+)?/;
-const HOOK_RULE_END_PATTERN = /# (?:vibeguard|vibe-guard):end/;
-const HOOK_RULE_START = "# vibeguard:start version=1";
-const HOOK_RULE_END = "# vibeguard:end";
+const HOOK_RULE_START_PATTERN = /^# (?:(?:vibeguard|vibe-guard):start(?: version=\d+)?|vibeguard:managed-hook:start\b.*)$/m;
+const HOOK_RULE_END_PATTERN = /^# (?:(?:vibeguard|vibe-guard):end|vibeguard:managed-hook:end\b.*)$/m;
+const HOOK_RULE_NAME = "vibeguard-preflight";
+const HOOK_RULE_VERSION = 2;
 
 const HOOKS = [
   { name: "pre-commit", command: "audit ." },
@@ -36,7 +36,7 @@ export function ensureGitHook(projectRoot, hook) {
       const endIndex = startMatch.index + endMatch.index;
       const before = existing.slice(0, startMatch.index).trimEnd();
       const after = existing.slice(endIndex + endMatch[0].length).trimStart();
-      const next = joinHookSections(before, block, after);
+      const next = composeShellHook(joinHookSections(before, after), block);
       if (next === existing) return null;
       writeExecutableHook(hookPath, next);
       return `Updated ${hook.name} VibeGuard hook.`;
@@ -44,12 +44,12 @@ export function ensureGitHook(projectRoot, hook) {
   }
 
   if (existing.trim().length === 0) {
-    writeExecutableHook(hookPath, `#!/bin/sh\n\n${block}\n`);
+    writeExecutableHook(hookPath, composeShellHook("", block));
     return `Installed ${hook.name} VibeGuard hook.`;
   }
 
   if (isShellHook(existing)) {
-    const next = joinHookSections(existing, block);
+    const next = composeShellHook(existing, block);
     if (next === existing) return null;
     writeExecutableHook(hookPath, next);
     return `Added VibeGuard check to existing ${hook.name} hook.`;
@@ -88,8 +88,8 @@ function resolveHookPath(projectRoot, hookName) {
 }
 
 function hookBlock(hook) {
-  return `${HOOK_RULE_START}
-# Managed by VibeGuard. Re-run \`vibeguard update .\` to refresh.
+  return `# vibeguard:managed-hook:start name=${HOOK_RULE_NAME} version=${HOOK_RULE_VERSION} hook=${hook.name}
+# Managed by VibeGuard (@taehwandev/vibeguard). Re-run \`vibeguard update .\` to refresh.
 echo "VibeGuard: running ${hook.name} safety audit..." >&2
 vibeguard_repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$vibeguard_repo_root" || exit 1
@@ -102,19 +102,14 @@ else
   echo "VibeGuard: install Node.js/npm or make vibeguard available before committing or pushing." >&2
   exit 1
 fi
-${HOOK_RULE_END}`;
+# vibeguard:managed-hook:end name=${HOOK_RULE_NAME}`;
 }
 
 function wrapperHook(block) {
-  return `#!/bin/sh
-
-${block}
-
-vibeguard_original_hook="$0.vibeguard-original"
+  return composeShellHook(`vibeguard_original_hook="$0.vibeguard-original"
 if [ -x "$vibeguard_original_hook" ]; then
   "$vibeguard_original_hook" "$@"
-fi
-`;
+fi`, block);
 }
 
 function isShellHook(content) {
@@ -125,6 +120,20 @@ function isShellHook(content) {
 
 function joinHookSections(...sections) {
   return `${sections.filter((section) => section.trim().length > 0).map((section) => section.trimEnd()).join("\n\n")}\n`;
+}
+
+function composeShellHook(existing, block) {
+  const trimmed = existing.trim();
+  if (trimmed.length === 0) return `#!/bin/sh\n\n${block}\n`;
+
+  const lines = existing.trimEnd().split(/\r?\n/);
+  const firstLine = lines[0].trim();
+  if (!firstLine.startsWith("#!")) {
+    return joinHookSections("#!/bin/sh", block, existing);
+  }
+
+  const body = lines.slice(1).join("\n").trim();
+  return joinHookSections(lines[0], block, body);
 }
 
 function writeExecutableHook(filePath, content) {
