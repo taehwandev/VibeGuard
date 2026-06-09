@@ -14,6 +14,7 @@ import {
 import { applyFixes } from "./fix.js";
 import { formatAppliedFixes, formatAuditReport } from "./format.js";
 import { expandHome, pathExists } from "./fs-utils.js";
+import { buildHookErrorStatus, formatHookStatusLine, loadHookStatus, runHookStatus, writeHookStatus } from "./hook-status.js";
 import { cliHelp, resolveLanguage } from "./i18n.js";
 import { initProject } from "./init.js";
 import { buildAgentPrompt } from "./prompt.js";
@@ -78,6 +79,44 @@ function main() {
       return;
     }
 
+    if (parsed.command === "hook") {
+      const hookArgs = parseHookArgs(parsed.positionals);
+      const projectRoot = resolveProjectPath(hookArgs.project);
+
+      if (hookArgs.action === "status") {
+        const status = loadHookStatus(projectRoot);
+        if (!status) throw new Error("No VibeGuard hook status found. Run `vibeguard hook run .` first.");
+        if (parsed.flags.json) process.stdout.write(`${JSON.stringify(status, null, 2)}\n`);
+        else process.stdout.write(`${formatHookStatusLine(status)}\n`);
+        process.exitCode = status.exitCode ?? 1;
+        return;
+      }
+
+      if (hookArgs.action !== "run") {
+        throw new Error(`Unknown hook command: ${hookArgs.action}`);
+      }
+
+      const changedOnly = parsed.flags.full ? false : true;
+      let status;
+      try {
+        status = runHookStatus(projectRoot, {
+          changedOnly,
+          event: parsed.flags.event,
+          language,
+          rulesPath: parsed.flags.rules,
+          strict: parsed.flags.strict
+        });
+      } catch (error) {
+        status = buildHookErrorStatus(error, { changedOnly, event: parsed.flags.event });
+        writeHookStatus(projectRoot, status);
+      }
+
+      if (parsed.flags.json) process.stdout.write(`${JSON.stringify(status, null, 2)}\n`);
+      else if (!parsed.flags.quiet) process.stdout.write(`${formatHookStatusLine(status)}\n`);
+      process.exitCode = status.exitCode;
+      return;
+    }
+
     if (parsed.command === "evidence") {
       if (parsed.positionals[0] === "install-claude-hook") {
         const projectRoot = resolveProjectPath(parsed.positionals[1] ?? ".");
@@ -130,8 +169,20 @@ function parseArgs(args) {
       parsed.flags.json = true;
       continue;
     }
+    if (arg === "--quiet") {
+      parsed.flags.quiet = true;
+      continue;
+    }
     if (arg === "--strict") {
       parsed.flags.strict = true;
+      continue;
+    }
+    if (arg === "--full") {
+      parsed.flags.full = true;
+      continue;
+    }
+    if (arg === "--changed-only") {
+      parsed.flags.changedOnly = true;
       continue;
     }
     if (arg === "--lang") {
@@ -146,6 +197,11 @@ function parseArgs(args) {
     }
     if (arg === "--request") {
       parsed.flags.request = args[index + 1];
+      index += 1;
+      continue;
+    }
+    if (arg === "--event") {
+      parsed.flags.event = args[index + 1];
       index += 1;
       continue;
     }
@@ -174,6 +230,21 @@ function firstProjectArg(positionals) {
   if (positionals.length === 0) return null;
   const candidate = path.resolve(expandHome(positionals[0]));
   return pathExists(candidate) ? positionals[0] : null;
+}
+
+function parseHookArgs(positionals) {
+  const actions = new Set(["run", "status"]);
+  if (actions.has(positionals[0])) {
+    return {
+      action: positionals[0],
+      project: positionals[1] ?? "."
+    };
+  }
+
+  return {
+    action: "run",
+    project: positionals[0] ?? "."
+  };
 }
 
 function requestFromPositionals(positionals, projectRoot) {

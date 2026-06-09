@@ -285,6 +285,8 @@ export function cliHelp(language) {
   vibeguard init|setup [project] [--rules <path>] [--lang <en|ko>]
   vibeguard update [project] [--rules <path>] [--lang <en|ko>]
   vibeguard audit [project] [--fix] [--strict] [--json] [--rules <path>] [--lang <en|ko>]
+  vibeguard hook run [project] [--event <name>] [--full] [--strict] [--quiet] [--json] [--rules <path>] [--lang <en|ko>]
+  vibeguard hook status [project] [--json]
   vibeguard prompt [project] --request "<what you want>" [--rules <path>] [--lang <en|ko>]
   vibeguard evidence [project] [--json]
   vibeguard evidence install-claude-hook [project] [--json]
@@ -296,6 +298,8 @@ export function cliHelp(language) {
   vibeguard audit . --lang ko
   vibeguard audit . --fix --lang ko
   vibeguard audit . --strict --lang ko
+  vibeguard hook run . --event post-edit
+  vibeguard hook status .
   vibeguard prompt . --request "로그인 추가" --lang ko
   vibeguard evidence .
   vibeguard evidence install-claude-hook .
@@ -314,6 +318,8 @@ Usage:
   vibeguard init|setup [project] [--rules <path>] [--lang <en|ko>]
   vibeguard update [project] [--rules <path>] [--lang <en|ko>]
   vibeguard audit [project] [--fix] [--strict] [--json] [--rules <path>] [--lang <en|ko>]
+  vibeguard hook run [project] [--event <name>] [--full] [--strict] [--quiet] [--json] [--rules <path>] [--lang <en|ko>]
+  vibeguard hook status [project] [--json]
   vibeguard prompt [project] --request "<what you want>" [--rules <path>] [--lang <en|ko>]
   vibeguard evidence [project] [--json]
   vibeguard evidence install-claude-hook [project] [--json]
@@ -325,6 +331,8 @@ Examples:
   vibeguard audit .
   vibeguard audit . --fix
   vibeguard audit . --strict
+  vibeguard hook run . --event post-edit
+  vibeguard hook status .
   vibeguard prompt . --request "Add login"
   vibeguard evidence .
   vibeguard evidence install-claude-hook .

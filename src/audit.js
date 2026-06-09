@@ -96,7 +96,9 @@ export function auditProject(projectPath, options = {}) {
     },
     stats: {
       scannedFiles: 0,
-      skippedFiles: 0
+      skippedFiles: 0,
+      scanMode: "full",
+      changedFiles: 0
     }
   };
 
@@ -107,7 +109,13 @@ export function auditProject(projectPath, options = {}) {
   checkEnvSafety(root, report);
   checkPackageScripts(root, report);
   checkPaidIntegrations(root, report);
-  checkFiles(root, report, { ...options, maxFileLines });
+  const changedScanFiles = options.changedOnly && report.git ? report.git.changedFiles : null;
+  checkFiles(root, report, {
+    ...options,
+    maxFileLines,
+    scanFiles: changedScanFiles,
+    scanMode: changedScanFiles ? "changed" : "full"
+  });
   summarize(report);
 
   return report;
@@ -306,7 +314,13 @@ function checkPaidIntegrations(root, report) {
 
 function checkFiles(root, report, options) {
   const maxFileLines = options.maxFileLines ?? 800;
-  const files = listGitVisibleFiles(root, { ignoreDirs: IGNORE_DIRS }) ?? listFiles(root, { ignoreDirs: IGNORE_DIRS });
+  const maxFileBytes = options.maxFileBytes ?? 1024 * 1024;
+  const files = options.scanFiles
+    ? resolveSelectedFiles(root, options.scanFiles, { ignoreDirs: IGNORE_DIRS, maxFileBytes })
+    : listGitVisibleFiles(root, { ignoreDirs: IGNORE_DIRS, maxFileBytes }) ?? listFiles(root, { ignoreDirs: IGNORE_DIRS, maxFileBytes });
+
+  report.stats.scanMode = options.scanMode ?? "full";
+  report.stats.changedFiles = options.scanFiles?.length ?? 0;
 
   for (const filePath of files) {
     const basename = path.basename(filePath);
@@ -339,6 +353,33 @@ function checkFiles(root, report, options) {
     scanEnvTemplateAssignments(root, filePath, content, report);
     scanKnownSecretValues(root, filePath, content, report);
   }
+}
+
+function resolveSelectedFiles(root, relatives, options) {
+  const files = [];
+  for (const relative of relatives) {
+    if (isInIgnoredDir(relative, options.ignoreDirs)) continue;
+
+    const fullPath = path.resolve(root, relative);
+    if (!isInsideRoot(root, fullPath)) continue;
+
+    try {
+      const stat = fs.statSync(fullPath);
+      if (stat.isFile() && stat.size <= options.maxFileBytes) files.push(fullPath);
+    } catch {
+      // Ignore paths that disappeared between Git status and file inspection.
+    }
+  }
+  return files;
+}
+
+function isInsideRoot(root, filePath) {
+  const relative = path.relative(root, filePath);
+  return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+}
+
+function isInIgnoredDir(relative, ignoreDirs) {
+  return relative.split(/[\\/]+/).some((segment) => ignoreDirs.has(segment));
 }
 
 function scanSecretAssignments(root, filePath, content, report) {

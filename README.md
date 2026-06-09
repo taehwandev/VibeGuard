@@ -83,6 +83,8 @@ vibeguard update .
 vibeguard audit .
 vibeguard audit . --fix
 vibeguard audit . --strict
+vibeguard hook run . --event post-edit
+vibeguard hook status .
 vibeguard evidence install-claude-hook .
 vibeguard evidence .
 vibeguard prompt . --request "Add login"
@@ -103,6 +105,29 @@ Audit exit codes:
 - `0`: ready, or warnings without `--strict`
 - `1`: warnings in `--strict` mode
 - `2`: blocked
+
+## Agent Hook Fast Path
+
+`vibeguard hook run` is the low-noise path for agent runtime hooks. It reuses
+the same deterministic audit core, scans only Git changed files by default, and
+writes a compact local status file:
+
+```text
+.vibeguard/status.json
+```
+
+The default output is one line so agents do not need to read the full audit
+report on every edit:
+
+```bash
+vibeguard hook run . --event post-edit
+vibeguard hook status .
+```
+
+Use `--json` when a hook runner needs machine-readable compact status. Use
+`--full` for a full scan. Git `pre-commit`, `pre-push`, CI, release checks, and
+manual review should continue to use `vibeguard audit .` or
+`vibeguard audit . --strict`.
 
 ## What It Does
 
