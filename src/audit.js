@@ -66,6 +66,51 @@ const PAID_INTEGRATION_HINTS = [
   "@google-cloud"
 ];
 
+const SOURCE_CODE_EXTENSIONS = new Set([
+  ".astro",
+  ".bash",
+  ".c",
+  ".cc",
+  ".cjs",
+  ".clj",
+  ".cljs",
+  ".cpp",
+  ".cs",
+  ".css",
+  ".dart",
+  ".erl",
+  ".ex",
+  ".exs",
+  ".fs",
+  ".fsx",
+  ".go",
+  ".h",
+  ".hpp",
+  ".html",
+  ".java",
+  ".js",
+  ".jsx",
+  ".kt",
+  ".lua",
+  ".m",
+  ".mjs",
+  ".mm",
+  ".php",
+  ".pl",
+  ".py",
+  ".r",
+  ".rb",
+  ".rs",
+  ".scala",
+  ".sh",
+  ".svelte",
+  ".swift",
+  ".ts",
+  ".tsx",
+  ".vue",
+  ".zsh"
+]);
+
 export function auditProject(projectPath, options = {}) {
   const root = path.resolve(projectPath);
   if (!pathExists(root)) throw new Error(`Project path does not exist: ${root}`);
@@ -339,7 +384,7 @@ function checkFiles(root, report, options) {
     report.stats.scannedFiles += 1;
 
     const lineCount = content.split(/\r?\n/).length;
-    if (lineCount > maxFileLines) {
+    if (isSourceCodeFile(filePath) && lineCount > maxFileLines) {
       addFinding(report, {
         severity: lineCount > maxFileLines * 2 ? "block" : "warn",
         category: "structure",
@@ -353,6 +398,10 @@ function checkFiles(root, report, options) {
     scanEnvTemplateAssignments(root, filePath, content, report);
     scanKnownSecretValues(root, filePath, content, report);
   }
+}
+
+function isSourceCodeFile(filePath) {
+  return SOURCE_CODE_EXTENSIONS.has(path.extname(filePath));
 }
 
 function resolveSelectedFiles(root, relatives, options) {

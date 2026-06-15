@@ -200,6 +200,10 @@ mode is intentionally guided:
 }
 ```
 
+`maxFileLines` applies only to source code files. Documentation, configuration,
+Gradle files, XML manifests, and similar text files are still scanned for safety
+signals such as secrets, but they do not receive oversized-code findings.
+
 ## Site
 
 A static bilingual product page lives in [site/](site/) and is intended for:
