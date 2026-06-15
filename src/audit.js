@@ -8,6 +8,7 @@ import {
   normalizeEnvValue,
   shouldScanEnvFileName
 } from "./env-policy.js";
+import { isSourceCodeFile, SCAN_IGNORE_DIRS } from "./file-policy.js";
 import {
   isProbablyTextFile,
   lineNumberAt,
@@ -23,23 +24,6 @@ import { normalizeLanguage, t } from "./i18n.js";
 import { loadRuleLibrary } from "./rules.js";
 import { containsCredentialUrlSecret, findCredentialUrlSecretMatches } from "./secret-url.js";
 import { staleUpdateFinding } from "./update-policy.js";
-
-const IGNORE_DIRS = new Set([
-  ".git",
-  ".next",
-  ".turbo",
-  ".vibeguard",
-  ".venv",
-  "build",
-  "coverage",
-  "DerivedData",
-  "dist",
-  "node_modules",
-  "Pods",
-  "target",
-  "venv",
-  "__pycache__"
-]);
 
 const KNOWN_SECRET_PATTERNS = [
   { label: "OpenAI API key", regex: /\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}\b/g },
@@ -65,51 +49,6 @@ const PAID_INTEGRATION_HINTS = [
   "firebase",
   "@google-cloud"
 ];
-
-const SOURCE_CODE_EXTENSIONS = new Set([
-  ".astro",
-  ".bash",
-  ".c",
-  ".cc",
-  ".cjs",
-  ".clj",
-  ".cljs",
-  ".cpp",
-  ".cs",
-  ".css",
-  ".dart",
-  ".erl",
-  ".ex",
-  ".exs",
-  ".fs",
-  ".fsx",
-  ".go",
-  ".h",
-  ".hpp",
-  ".html",
-  ".java",
-  ".js",
-  ".jsx",
-  ".kt",
-  ".lua",
-  ".m",
-  ".mjs",
-  ".mm",
-  ".php",
-  ".pl",
-  ".py",
-  ".r",
-  ".rb",
-  ".rs",
-  ".scala",
-  ".sh",
-  ".svelte",
-  ".swift",
-  ".ts",
-  ".tsx",
-  ".vue",
-  ".zsh"
-]);
 
 export function auditProject(projectPath, options = {}) {
   const root = path.resolve(projectPath);
@@ -361,8 +300,8 @@ function checkFiles(root, report, options) {
   const maxFileLines = options.maxFileLines ?? 800;
   const maxFileBytes = options.maxFileBytes ?? 1024 * 1024;
   const files = options.scanFiles
-    ? resolveSelectedFiles(root, options.scanFiles, { ignoreDirs: IGNORE_DIRS, maxFileBytes })
-    : listGitVisibleFiles(root, { ignoreDirs: IGNORE_DIRS, maxFileBytes }) ?? listFiles(root, { ignoreDirs: IGNORE_DIRS, maxFileBytes });
+    ? resolveSelectedFiles(root, options.scanFiles, { ignoreDirs: SCAN_IGNORE_DIRS, maxFileBytes })
+    : listGitVisibleFiles(root, { ignoreDirs: SCAN_IGNORE_DIRS, maxFileBytes }) ?? listFiles(root, { ignoreDirs: SCAN_IGNORE_DIRS, maxFileBytes });
 
   report.stats.scanMode = options.scanMode ?? "full";
   report.stats.changedFiles = options.scanFiles?.length ?? 0;
@@ -398,10 +337,6 @@ function checkFiles(root, report, options) {
     scanEnvTemplateAssignments(root, filePath, content, report);
     scanKnownSecretValues(root, filePath, content, report);
   }
-}
-
-function isSourceCodeFile(filePath) {
-  return SOURCE_CODE_EXTENSIONS.has(path.extname(filePath));
 }
 
 function resolveSelectedFiles(root, relatives, options) {
