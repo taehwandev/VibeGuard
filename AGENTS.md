@@ -46,24 +46,23 @@ agents.
   repository risk.
 - Use AgentPlaybook only as the external execution playbook for planning,
   implementation, verification, review, and handoff.
-- AgentPlaybook root placeholder: `<AGENTPLAYBOOK_ROOT>`. In this workspace it
-  normally resolves to `~/Documents/KeyFlowVault/AgentPlaybook`; do not
-  hard-code `/Users/<name>/...` paths.
-- Do not clone or download AgentPlaybook from this repo's instructions. If the
-  root is missing or unknown, ask the user for the existing managed copy
-  location.
+- Reuse the existing shared AgentPlaybook root from `${AGENTPLAYBOOK_HOME}`.
+  Do not hard-code personal absolute paths in committed repo instructions.
+- Do not clone, download, vendor, copy, or pin AgentPlaybook from this repo's
+  instructions. If `${AGENTPLAYBOOK_HOME}` is unset or the root is missing, ask
+  the user for the existing managed copy location before continuing.
 - Do not merge, vendor, or copy AgentPlaybook content into this repo. If rules
   conflict, this `AGENTS.md` and `VIBEGUARD.md` take precedence.
 - For multi-step work, route before editing:
-  `python3 <AGENTPLAYBOOK_ROOT>/scripts/workflow.py route <command> --request "<request>"`.
+  `python3 "${AGENTPLAYBOOK_HOME}/scripts/workflow.py" route <command> --request "<request>"`.
 - When wrappers are available, run `agent-preflight.py` before edits and
   `agent-finish-check.py` before final report, commit, release, or handoff.
 - Apply current guardrails with audit-only by default:
-  `npx --yes @taehwandev/vibeguard@latest audit . --rules <AGENTPLAYBOOK_ROOT>`.
+  `npx --yes @taehwandev/vibeguard@latest audit . --rules "${AGENTPLAYBOOK_HOME}"`.
   Run VibeGuard setup or update only after explicit user approval to create or
   refresh managed guardrail blocks.
-- Use human-facing gate signals from the route ledger:
-  `🐱🔵 PENDING`, `🐱🟢 GREEN`, `🐱🟡 YELLOW`, `🐱🔴 RED`.
+- Use only these human-facing route gate signals:
+  `🐱🟢 SUCCESS` and `🐱🔴 FAIL`.
 
 <!-- vibeguard:start version=1 -->
 ## VibeGuard
