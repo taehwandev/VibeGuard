@@ -54,9 +54,14 @@ agents.
 - When wrappers are available, run `agent-preflight.py` before edits and
   `agent-finish-check.py` before final report, commit, release, or handoff.
 - Apply current guardrails with audit-only by default:
-  `npx --yes @taehwandev/vibeguard@latest audit . --rules "${AGENTPLAYBOOK_HOME}"`.
+  `vibeguard audit . --rules "${AGENTPLAYBOOK_HOME}"`.
+  Use `npx --yes @taehwandev/vibeguard@latest audit . --rules
+  "${AGENTPLAYBOOK_HOME}"` only when no trusted installed binary is available
+  or when explicitly validating the latest published package.
   Run VibeGuard setup or update only after explicit user approval to create or
   refresh managed guardrail blocks.
+- Do not make repeated local hooks depend on `npx` first; npm registry lookup
+  can block the hook before VibeGuard itself starts.
 - Use only these human-facing route gate signals:
   `🐱🟢 SUCCESS` and `🐱🔴 FAIL`.
 

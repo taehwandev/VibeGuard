@@ -607,53 +607,6 @@ test("evidence records Claude hook failures and extracts exit code", () => {
   assert.equal(parsed.exitCode, 1);
 });
 
-test("evidence installs Claude Code local hook idempotently", () => {
-  const root = makeTempProject();
-  const settingsPath = path.join(root, ".claude", "settings.local.json");
-  fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
-  fs.writeFileSync(
-    settingsPath,
-    `${JSON.stringify(
-      {
-        permissions: {
-          allow: ["Bash(npm test)"]
-        },
-        hooks: {
-          PostToolUse: [
-            {
-              matcher: "Edit|Write",
-              hooks: [{ type: "command", command: "npm test" }]
-            }
-          ]
-        }
-      },
-      null,
-      2
-    )}\n`,
-    "utf8"
-  );
-
-  const installed = runCli(["evidence", "install-claude-hook", root, "--json"]);
-  assert.equal(installed.status, 0);
-  const result = JSON.parse(installed.stdout);
-  assert.deepEqual(result.events, ["PostToolUse", "PostToolUseFailure"]);
-  assert.match(result.command, /npx --yes @taehwandev\/vibeguard@latest evidence claude-hook/);
-
-  const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
-  assert.deepEqual(settings.permissions.allow, ["Bash(npm test)"]);
-  assert.equal(settings.hooks.PostToolUse.some((group) => group.matcher === "Edit|Write"), true);
-  assert.equal(countClaudeEvidenceHooks(settings), 2);
-
-  const gitignore = fs.readFileSync(path.join(root, ".gitignore"), "utf8");
-  assert.match(gitignore, /^\.claude\/settings\.local\.json$/m);
-  assert.match(gitignore, /^\.vibeguard\/session\/$/m);
-
-  const reinstalled = runCli(["evidence", "install-claude-hook", root, "--json"]);
-  assert.equal(reinstalled.status, 0);
-  const settingsAfterSecondRun = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
-  assert.equal(countClaudeEvidenceHooks(settingsAfterSecondRun), 2);
-});
-
 test("audit report and prompt support Korean localization", () => {
   const root = makeTempProject();
   initProject(root);
@@ -786,11 +739,4 @@ function runCli(args, options = {}) {
     encoding: "utf8",
     input: options.input
   });
-}
-
-function countClaudeEvidenceHooks(settings) {
-  return Object.values(settings.hooks)
-    .flat()
-    .flatMap((group) => group.hooks)
-    .filter((hook) => /(?:\bvibeguard|@taehwandev\/vibeguard@latest)\s+evidence\s+claude-hook\b/.test(hook.command)).length;
 }

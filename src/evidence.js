@@ -4,7 +4,15 @@ import { redactCredentialUrlSecrets } from "./secret-url.js";
 
 const EVIDENCE_FILE = path.join(".vibeguard", "session", "events.jsonl");
 const CLAUDE_LOCAL_SETTINGS = path.join(".claude", "settings.local.json");
-const CLAUDE_EVIDENCE_COMMAND = "npx --yes @taehwandev/vibeguard@latest evidence claude-hook \"${CLAUDE_PROJECT_DIR:-.}\"";
+const CLAUDE_EVIDENCE_COMMAND = [
+  "if command -v vibeguard >/dev/null 2>&1; then",
+  "  vibeguard evidence claude-hook \"${CLAUDE_PROJECT_DIR:-.}\"",
+  "elif command -v npx >/dev/null 2>&1; then",
+  "  npx --yes @taehwandev/vibeguard@latest evidence claude-hook \"${CLAUDE_PROJECT_DIR:-.}\"",
+  "else",
+  "  echo \"VibeGuard: install Node.js/npm or make vibeguard available before running evidence hooks.\" >&2; exit 1",
+  "fi"
+].join("\n");
 const CLAUDE_HOOK_EVENTS = ["PostToolUse", "PostToolUseFailure"];
 
 const COMMAND_CHECKS = [
