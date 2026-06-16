@@ -20,18 +20,17 @@ const PUBLIC_REVIEW_PATH_PATTERNS = [
   /(^|\/)(?:prisma\/migrations|migrations|supabase\/migrations)\//i
 ];
 
-export function checkGitSafety(root, report, config, addFinding) {
+export function checkGitSafety(root, report, config, addFinding, options = {}) {
   if (!pathExists(path.join(root, ".git"))) return;
 
-  const context = readGitContext(root, config);
+  const context = readGitContext(root, config, options.env ?? process.env);
   report.git = context;
   if (!context.remoteName && context.changedFiles.length === 0) return;
 
   const sensitiveFiles = context.changedFiles.filter((file) => isSensitiveGitPath(file));
   if (sensitiveFiles.length > 0) {
-    const trustedPrivate = context.visibility === "private" || context.visibility === "internal";
     addFinding(report, {
-      severity: trustedPrivate ? "warn" : "block",
+      severity: repositoryPathFindingSeverity(context, { publicSeverity: "block" }),
       category: "repository",
       message: t(report.language, "finding.gitSensitiveChanges.message", {
         visibility: context.visibility,
@@ -54,9 +53,9 @@ export function checkGitSafety(root, report, config, addFinding) {
   }
 
   const reviewFiles = context.changedFiles.filter(isPublicReviewPath);
-  if ((context.visibility === "public" || context.visibility === "unknown") && reviewFiles.length > 0) {
+  if (!isTrustedPrivateVisibility(context.visibility) && reviewFiles.length > 0) {
     addFinding(report, {
-      severity: "warn",
+      severity: repositoryPathFindingSeverity(context, { publicSeverity: "warn" }),
       category: "repository",
       message: t(report.language, "finding.gitPublicOpsChanges.message", {
         visibility: context.visibility,
@@ -67,24 +66,39 @@ export function checkGitSafety(root, report, config, addFinding) {
   }
 }
 
-function readGitContext(root, config) {
+function readGitContext(root, config, env) {
   const remoteUrl = gitOutput(root, ["config", "--get", "remote.origin.url"]) || null;
   const remote = parseGitRemote(remoteUrl);
   const projectName = detectProjectName(root);
-  const configuredVisibility =
-    config.repository?.visibility ??
-    config.git?.visibility ??
-    gitOutput(root, ["config", "--get", "vibeguard.repositoryVisibility"]) ??
-    githubActionsVisibility(remote);
+  const visibility = resolveRepositoryVisibility(root, config, remote, env);
 
   return {
     remote: remote ? `${remote.owner}/${remote.repo}` : null,
     remoteHost: remote?.host ?? null,
     remoteName: remote?.repo ?? null,
     projectName,
-    visibility: normalizeRepositoryVisibility(configuredVisibility),
+    visibility: visibility.value,
+    visibilitySource: visibility.source,
     changedFiles: readGitChangedFiles(root)
   };
+}
+
+function resolveRepositoryVisibility(root, config, remote, env) {
+  const candidates = [
+    ["config", config.repository?.visibility],
+    ["config", config.git?.visibility],
+    ["git-config", gitOutput(root, ["config", "--get", "vibeguard.repositoryVisibility"])],
+    ["env", env?.VIBEGUARD_REPOSITORY_VISIBILITY],
+    ["github-actions", githubActionsVisibility(remote, env)],
+    ["gitlab-ci", gitlabCiVisibility(remote, env)]
+  ];
+
+  for (const [source, value] of candidates) {
+    const normalized = normalizeRepositoryVisibility(value);
+    if (isKnownRepositoryVisibility(normalized)) return { value: normalized, source };
+  }
+
+  return { value: "unknown", source: "unknown" };
 }
 
 function gitOutput(root, args) {
@@ -102,22 +116,32 @@ function gitOutput(root, args) {
 
 function parseGitRemote(remoteUrl) {
   if (!remoteUrl) return null;
-  const sshMatch = remoteUrl.match(/^(?:ssh:\/\/)?git@([^:/]+)[:/](.+?)\/(.+?)(?:\.git)?$/i);
+  const sshMatch = remoteUrl.match(/^(?:ssh:\/\/)?git@([^:/]+)[:/](.+?)(?:\.git)?$/i);
   if (sshMatch) {
-    return { host: sshMatch[1].toLowerCase(), owner: sshMatch[2], repo: sshMatch[3].replace(/\.git$/i, "") };
+    return remoteFromPath(sshMatch[1], sshMatch[2]);
   }
 
   try {
     const parsed = new URL(remoteUrl);
-    const parts = parsed.pathname.replace(/^\/|\.git$/g, "").split("/");
-    if (parts.length >= 2) {
-      return { host: parsed.hostname.toLowerCase(), owner: parts.at(-2), repo: parts.at(-1) };
-    }
+    return remoteFromPath(parsed.hostname, parsed.pathname);
   } catch {
     return null;
   }
 
   return null;
+}
+
+function remoteFromPath(host, remotePath) {
+  const parts = String(remotePath ?? "")
+    .replace(/^\/|\.git$/g, "")
+    .split("/")
+    .filter(Boolean);
+  if (parts.length < 2) return null;
+  return {
+    host: String(host).toLowerCase(),
+    owner: parts.slice(0, -1).join("/"),
+    repo: parts.at(-1)
+  };
 }
 
 function detectProjectName(root) {
@@ -126,12 +150,26 @@ function detectProjectName(root) {
   return packageName || path.basename(root);
 }
 
-function githubActionsVisibility(remote) {
+function githubActionsVisibility(remote, env) {
   if (!remote || remote.host !== "github.com") return null;
-  const currentRepo = process.env.GITHUB_REPOSITORY;
-  const visibility = process.env.GITHUB_REPOSITORY_VISIBILITY;
+  const currentRepo = env?.GITHUB_REPOSITORY;
+  const visibility = env?.GITHUB_REPOSITORY_VISIBILITY;
   if (!visibility) return null;
   if (currentRepo && currentRepo.toLowerCase() !== `${remote.owner}/${remote.repo}`.toLowerCase()) return null;
+  return visibility;
+}
+
+function gitlabCiVisibility(remote, env) {
+  const visibility = env?.CI_PROJECT_VISIBILITY;
+  if (!visibility) return null;
+  if (!remote) return visibility;
+
+  const serverHost = env?.CI_SERVER_HOST;
+  if (serverHost && remote.host !== serverHost.toLowerCase()) return null;
+
+  const projectPath = env?.CI_PROJECT_PATH;
+  if (projectPath && projectPath.toLowerCase() !== `${remote.owner}/${remote.repo}`.toLowerCase()) return null;
+
   return visibility;
 }
 
@@ -139,6 +177,20 @@ function normalizeRepositoryVisibility(value) {
   const normalized = String(value ?? "").trim().toLowerCase();
   if (["public", "private", "internal"].includes(normalized)) return normalized;
   return "unknown";
+}
+
+function isKnownRepositoryVisibility(value) {
+  return value === "public" || value === "private" || value === "internal";
+}
+
+function isTrustedPrivateVisibility(value) {
+  return value === "private" || value === "internal";
+}
+
+function repositoryPathFindingSeverity(context, { publicSeverity }) {
+  if (context.visibility === "public") return publicSeverity;
+  if (isTrustedPrivateVisibility(context.visibility)) return "warn";
+  return "info";
 }
 
 function readGitChangedFiles(root) {

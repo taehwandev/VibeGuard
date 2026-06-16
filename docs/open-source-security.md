@@ -54,17 +54,29 @@ private. VibeGuard treats visibility as:
 - `private` or `internal`: confirmed non-public repository.
 - `unknown`: local Git cannot confirm visibility.
 
-Set visibility explicitly when local Git cannot infer it:
+Set visibility explicitly when local Git cannot infer it. Project or local Git
+configuration is preferred for developer machines, and the environment variable
+is useful for CI systems or temporary local sessions:
 
 ```bash
 git config vibeguard.repositoryVisibility private
 git config vibeguard.repositoryVisibility public
+VIBEGUARD_REPOSITORY_VISIBILITY=private vibeguard audit .
 ```
 
-Public or unknown visibility is treated conservatively. Sensitive changed files
+VibeGuard does not call provider APIs or depend on local provider tokens, CLI
+login state, or network access to resolve visibility. It uses explicit
+configuration first, then safe CI metadata such as GitLab's
+`CI_PROJECT_VISIBILITY` when the metadata matches the current remote.
+
+Confirmed public visibility is treated conservatively. Sensitive changed files
 such as `.env`, private keys, service account files, credentials, or secret
-config files block the audit. Deployment, infrastructure, migration, and
-workflow changes warn so the strict pre-push gate can stop and force review.
+config files block the audit. Confirmed private or internal visibility warns for
+path-based sensitive Git changes. Unknown visibility stays advisory for
+path-based repository checks so providers without local visibility metadata,
+such as Bitbucket, do not block commit and push hooks only because visibility
+cannot be inferred. Actual secret values found in scanned files are still
+blocked by the security scanner.
 
 VibeGuard also warns when the remote repository name is very close to the local
 project name but not exact. This catches mistakes such as pushing a local

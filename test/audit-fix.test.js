@@ -462,7 +462,7 @@ test("audit blocks credential-bearing database and http urls", () => {
   assert.equal(JSON.stringify(sanitizeReport(report)).includes("generated-password-123"), false);
 });
 
-test("audit blocks sensitive git changes when repository visibility is public or unknown", () => {
+test("audit blocks sensitive git changes when repository visibility is public", () => {
   const root = makeRealGitProject();
   fs.writeFileSync(path.join(root, "package.json"), `${JSON.stringify({ name: "customer-app" }, null, 2)}\n`, "utf8");
   runGit(root, ["remote", "add", "origin", "https://github.com/example/customer-app.git"]);

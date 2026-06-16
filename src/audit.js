@@ -89,7 +89,7 @@ export function auditProject(projectPath, options = {}) {
   checkProjectBasics(root, report);
   const staleUpdate = staleUpdateFinding(root, config, { hasConfig, language, now: options.now });
   if (staleUpdate) addFinding(report, staleUpdate);
-  checkGitSafety(root, report, config, addFinding);
+  checkGitSafety(root, report, config, addFinding, { env: options.env ?? process.env });
   checkEnvSafety(root, report);
   checkPackageScripts(root, report);
   checkPaidIntegrations(root, report);
