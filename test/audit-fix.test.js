@@ -86,10 +86,8 @@ test("init creates project policy and config", () => {
   assert.ok(fs.existsSync(path.join(root, ".git", "hooks", "pre-push")));
 
   const policy = fs.readFileSync(path.join(root, "VIBEGUARD.md"), "utf8");
-  assert.match(policy, /Environment-Specific Configuration Rule/);
-  assert.match(policy, /web env\/deployment variables/);
-  assert.match(policy, /Android `local\.properties` or Gradle/);
-  assert.match(policy, /iOS `\.xcconfig`/);
+  assert.doesNotMatch(policy, /Environment-Specific Configuration Rule/);
+  assert.doesNotMatch(policy, /environment-specific web URLs/);
 
   const agentInstructions = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");
   assert.match(agentInstructions, /<!-- vibeguard:start version=1 -->/);
@@ -102,7 +100,7 @@ test("init creates project policy and config", () => {
   assert.match(agentInstructions, /If the user pastes a secret in chat/);
   assert.match(agentInstructions, /Prefer cost-aware architecture/);
   assert.match(agentInstructions, /commonize repeated API\/model\/provider calls/);
-  assert.match(agentInstructions, /environment-specific URLs/);
+  assert.doesNotMatch(agentInstructions, /environment-specific URLs/);
   assert.match(
     agentInstructions,
     /npx --yes @taehwandev\/vibeguard@latest audit \./
@@ -356,7 +354,7 @@ test("prompt includes actionable guardrails", () => {
   assert.match(prompt, /do not claim verification that was not observed/);
   assert.match(prompt, /Prefer cost-aware architecture/);
   assert.match(prompt, /commonize repeated API\/model\/provider calls/);
-  assert.match(prompt, /environment-specific URLs/);
+  assert.doesNotMatch(prompt, /environment-specific URLs/);
   assert.match(prompt, /verify `git remote -v`, repository visibility, and changed files/);
   assert.match(prompt, /If the user pastes a secret in chat/);
 });
@@ -435,6 +433,13 @@ test("audit ignores at signs in public http url paths and queries", () => {
     (finding) => finding.category === "security" && finding.severity === "block"
   );
   assert.equal(blockingSecurityFindings.length, 0);
+});
+
+test("audit ignores public telemetry DSNs without URL passwords", () => {
+  const root = makeTempProject();
+  const publicTelemetryUrl = ["https://public1234567890abcdef", "o123456.ingest.sentry.io/123456"].join("@");
+  fs.writeFileSync(path.join(root, "sentry.server.config.ts"), `Sentry.init({ dsn: "${publicTelemetryUrl}" });\n`, "utf8");
+  assert.equal(auditProject(root).findings.some((finding) => finding.category === "security" && finding.severity === "block"), false);
 });
 
 test("audit blocks credential-bearing database and http urls", () => {

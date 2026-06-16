@@ -37,7 +37,7 @@ export function redactCredentialUrlSecrets(content) {
 
 function credentialUrlSecretLabel(value) {
   const parsed = parseUrl(value);
-  if (!parsed || !hasUrlCredentials(parsed)) return null;
+  if (!parsed || !hasUrlPassword(parsed)) return null;
   if (DATABASE_URL_PROTOCOLS.has(parsed.protocol)) return "database connection string";
   if (HTTP_URL_PROTOCOLS.has(parsed.protocol)) return "URL with embedded credentials";
   return null;
@@ -51,6 +51,6 @@ function parseUrl(value) {
   }
 }
 
-function hasUrlCredentials(url) {
-  return url.username !== "" || url.password !== "";
+function hasUrlPassword(url) {
+  return url.password !== "";
 }

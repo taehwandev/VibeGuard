@@ -56,15 +56,6 @@ files such as `.env.example`, `.env.sample`, `.env.template`, and `.env.dist`
 may be shared only when they contain names and placeholders, not real keys,
 tokens, credentials, private keys, or password-bearing URLs.
 
-## Environment-Specific Configuration Rule
-
-Do not hard-code environment-specific web URLs, API origins, redirect/callback
-URLs, or asset hosts in source code. When values differ between development,
-staging, and production, read them from the platform's normal configuration
-mechanism: web env/deployment variables, Android `local.properties` or Gradle
-properties, and iOS `.xcconfig`, scheme environment variables, or build
-settings. Shared templates may document only names and placeholders.
-
 ## Cost-Aware Architecture Rule
 
 Do not solve small product requests by stacking paid services, new databases,

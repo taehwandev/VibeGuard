@@ -13,8 +13,6 @@ work for approval.
 - Preserve existing project instructions outside the managed VibeGuard block.
 - Protect runtime env files and keep env templates such as `.env.example` and
   `.env.sample` value-free.
-- Require environment-specific URLs, API origins, redirect/callback URLs, and
-  asset hosts to come from platform config instead of hard-coded source values.
 - Detect likely hard-coded secrets without printing the values.
 - Quarantine simple hard-coded JS/TS/Python secret assignments when `--fix` is
   requested.
@@ -53,8 +51,9 @@ work for approval.
   rate limits can satisfy the request.
 - Do not duplicate client-side fetching, paid provider calls, or model calls in
   multiple components when a shared server-side access path can handle it.
-- Do not hard-code development, staging, or production addresses in source when
-  those values vary by environment.
+- Do not enforce application URL placement policy. Environment-specific URL
+  guidance belongs in AgentPlaybook skills, project instructions, or platform
+  docs rather than this guardrail layer.
 - Do not claim full agent control, rollback, or retry enforcement from execution
   evidence alone.
 
