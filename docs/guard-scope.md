@@ -23,7 +23,7 @@ work for approval.
 - Record optional execution evidence from supported agent hooks.
 - Keep server-only secrets from being moved into client code or public bundles.
 - Warn or block before destructive scripts, database work, production deploys,
-  credential changes, paid API/model usage, and oversized edits.
+  credential changes, and paid API/model usage.
 - Block sensitive Git changes when repository visibility is public or unknown;
   warn on similar-but-not-exact remote names and public deployment or
   infrastructure changes.

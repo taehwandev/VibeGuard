@@ -62,7 +62,6 @@ function defaultConfig(options) {
     mode: "guided",
     display: "emoji",
     rulesPath: options.rulesPath ?? null,
-    maxFileLines: 800,
     repository: {
       visibility: "unknown"
     },

@@ -122,7 +122,7 @@ test("init creates project policy and config", () => {
   assert.equal(config.mode, "guided");
   assert.equal(config.display, "emoji");
   assert.equal(config.rulesPath, null);
-  assert.equal(config.maxFileLines, 800);
+  assert.equal(Object.hasOwn(config, "maxFileLines"), false);
   assert.equal(config.repository.visibility, "unknown");
   assert.equal(config.update.checkIntervalDays, 7);
   assert.ok(fs.existsSync(path.join(root, ".vibeguard", "update-state.json")));
@@ -144,26 +144,19 @@ test("audit reads developer tuning from .vibeguard.json", () => {
   const report = auditProject(root);
   assert.equal(report.mode, "developer");
   assert.equal(report.display, "traffic-light");
-  assert.equal(report.findings.some((finding) => finding.file === "small.js" && finding.category === "structure"), true);
+  assert.equal(report.findings.some((finding) => finding.file === "small.js" && finding.category === "structure"), false);
 });
 
-test("audit applies maxFileLines only to source code files", () => {
+test("audit ignores retired maxFileLines setting", () => {
   const root = makeTempProject();
   initProject(root);
   fs.writeFileSync(path.join(root, ".vibeguard.json"), `${JSON.stringify({ maxFileLines: 2 }, null, 2)}\n`, "utf8");
 
   const longContent = ["one", "two", "three"].join("\n");
   fs.writeFileSync(path.join(root, "large.js"), longContent, "utf8");
-  fs.writeFileSync(path.join(root, "README.md"), longContent, "utf8");
-  fs.writeFileSync(path.join(root, "build.gradle"), longContent, "utf8");
-  fs.writeFileSync(path.join(root, "build.gradle.kts"), longContent, "utf8");
-  fs.writeFileSync(path.join(root, "config.yaml"), longContent, "utf8");
-  fs.mkdirSync(path.join(root, "app", "src", "main"), { recursive: true });
-  fs.writeFileSync(path.join(root, "app", "src", "main", "AndroidManifest.xml"), longContent, "utf8");
 
   const report = auditProject(root);
-  const structureFiles = report.findings.filter((finding) => finding.category === "structure").map((finding) => finding.file);
-  assert.deepEqual(structureFiles, ["large.js"]);
+  assert.equal(report.findings.some((finding) => finding.file === "large.js" && finding.category === "structure"), false);
 });
 
 test("audit warns when VibeGuard update check state is stale", () => {

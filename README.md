@@ -153,7 +153,7 @@ manual review should continue to use `vibeguard audit .` or
   can be checked against observed commands.
 - Installs an optional local Claude Code evidence hook with
   `vibeguard evidence install-claude-hook .`.
-- Flags risky scripts, oversized files, paid integrations, and data/cost risks.
+- Flags risky scripts, paid integrations, and data/cost risks.
 - Pushes agents toward cost-aware architecture instead of adding services,
   dependencies, or infrastructure by default.
 - Encourages shared web architecture patterns such as common server-side
@@ -180,7 +180,6 @@ mode is intentionally guided:
   "mode": "guided",
   "display": "emoji",
   "rulesPath": null,
-  "maxFileLines": 800,
   "repository": {
     "visibility": "unknown"
   },
@@ -194,10 +193,6 @@ mode is intentionally guided:
   }
 }
 ```
-
-`maxFileLines` applies only to source code files. Documentation, configuration,
-Gradle files, XML manifests, and similar text files are still scanned for safety
-signals such as secrets, but they do not receive oversized-code findings.
 
 ## Site
 

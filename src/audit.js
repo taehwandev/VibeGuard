@@ -8,7 +8,7 @@ import {
   normalizeEnvValue,
   shouldScanEnvFileName
 } from "./env-policy.js";
-import { isSourceCodeFile, SCAN_IGNORE_DIRS } from "./file-policy.js";
+import { SCAN_IGNORE_DIRS } from "./file-policy.js";
 import {
   isProbablyTextFile,
   lineNumberAt,
@@ -59,7 +59,6 @@ export function auditProject(projectPath, options = {}) {
   const config = readJsonIfExists(configPath) ?? {};
   const language = normalizeLanguage(options.language ?? options.lang ?? config.language);
   const rulesPath = options.rulesPath ?? config.rulesPath;
-  const maxFileLines = options.maxFileLines ?? config.maxFileLines;
 
   const report = {
     root,
@@ -96,7 +95,6 @@ export function auditProject(projectPath, options = {}) {
   const changedScanFiles = options.changedOnly && report.git ? report.git.changedFiles : null;
   checkFiles(root, report, {
     ...options,
-    maxFileLines,
     scanFiles: changedScanFiles,
     scanMode: changedScanFiles ? "changed" : "full"
   });
@@ -297,7 +295,6 @@ function checkPaidIntegrations(root, report) {
 }
 
 function checkFiles(root, report, options) {
-  const maxFileLines = options.maxFileLines ?? 800;
   const maxFileBytes = options.maxFileBytes ?? 1024 * 1024;
   const files = options.scanFiles
     ? resolveSelectedFiles(root, options.scanFiles, { ignoreDirs: SCAN_IGNORE_DIRS, maxFileBytes })
@@ -321,17 +318,6 @@ function checkFiles(root, report, options) {
     const relative = relativePath(root, filePath);
     const content = fs.readFileSync(filePath, "utf8");
     report.stats.scannedFiles += 1;
-
-    const lineCount = content.split(/\r?\n/).length;
-    if (isSourceCodeFile(filePath) && lineCount > maxFileLines) {
-      addFinding(report, {
-        severity: lineCount > maxFileLines * 2 ? "block" : "warn",
-        category: "structure",
-        file: relative,
-        message: t(report.language, "finding.largeFile.message", { lineCount }),
-        recommendation: t(report.language, "finding.largeFile.recommendation")
-      });
-    }
 
     scanSecretAssignments(root, filePath, content, report);
     scanEnvTemplateAssignments(root, filePath, content, report);
