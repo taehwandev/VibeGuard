@@ -56,11 +56,16 @@ function main() {
 
     if (parsed.command === "audit") {
       const projectRoot = resolveProjectPath(parsed.positionals[0] ?? ".");
-      const report = auditProject(projectRoot, { rulesPath: parsed.flags.rules, language });
+      const auditOptions = {
+        rulesPath: parsed.flags.rules,
+        language,
+        changedOnly: parsed.flags.changedOnly
+      };
+      const report = auditProject(projectRoot, auditOptions);
 
       if (parsed.flags.fix) {
         const applied = applyFixes(projectRoot, report);
-        const nextReport = auditProject(projectRoot, { rulesPath: parsed.flags.rules, language });
+        const nextReport = auditProject(projectRoot, auditOptions);
         if (parsed.flags.json) {
           process.stdout.write(`${JSON.stringify({ applied, report: sanitizeReport(nextReport) }, null, 2)}\n`);
         } else {

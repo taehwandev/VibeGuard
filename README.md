@@ -125,8 +125,9 @@ vibeguard hook status .
 ```
 
 Use `--json` when a hook runner needs machine-readable compact status. Use
-`--full` for a full scan. Git `pre-commit`, `pre-push`, CI, release checks, and
-manual review should continue to use `vibeguard audit .` or
+`--full` for a full scan. For a manual audit limited to the current Git diff,
+use `vibeguard audit . --changed-only`. Git `pre-commit`, `pre-push`, CI,
+release checks, and manual review should continue to use `vibeguard audit .` or
 `vibeguard audit . --strict`.
 
 ## What It Does

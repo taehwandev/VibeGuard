@@ -53,6 +53,24 @@ test("hook run writes compact changed-only status for agent hooks", () => {
   assert.match(cached.stdout, /^VibeGuard hook: green /);
 });
 
+test("audit changed-only scans only Git changed files", () => {
+  const root = makeRealGitProject();
+  initProject(root);
+  fs.writeFileSync(path.join(root, "large.js"), "console.log('old');\n".repeat(900), "utf8");
+  commitAll(root);
+
+  fs.writeFileSync(path.join(root, "small.js"), "console.log('changed');\n", "utf8");
+
+  const run = runCli(["audit", root, "--changed-only", "--json"]);
+  assert.equal(run.status, 0, run.stderr || run.stdout);
+
+  const report = JSON.parse(run.stdout);
+  assert.equal(report.stats.scanMode, "changed");
+  assert.equal(report.stats.scannedFiles, 1);
+  assert.equal(report.stats.changedFiles, 1);
+  assert.equal(report.findings.some((finding) => finding.file === "large.js"), false);
+});
+
 test("hook run blocks changed secrets without exposing values", () => {
   const root = makeRealGitProject();
   initProject(root);
