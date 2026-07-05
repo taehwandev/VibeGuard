@@ -85,18 +85,23 @@ export function auditProject(projectPath, options = {}) {
     }
   };
 
+  const pathspecs = normalizePathspecs(options.paths ?? options.pathspecs ?? []);
   checkProjectBasics(root, report);
   const staleUpdate = staleUpdateFinding(root, config, { hasConfig, language, now: options.now });
   if (staleUpdate) addFinding(report, staleUpdate);
-  checkGitSafety(root, report, config, addFinding, { env: options.env ?? process.env });
+  checkGitSafety(root, report, config, addFinding, {
+    env: options.env ?? process.env,
+    pathspecs
+  });
   checkEnvSafety(root, report);
   checkPackageScripts(root, report);
   checkPaidIntegrations(root, report);
   const changedScanFiles = options.changedOnly && report.git ? report.git.changedFiles : null;
+  const pathspecScanFiles = pathspecs.length > 0 && !changedScanFiles ? pathspecs : null;
   checkFiles(root, report, {
     ...options,
-    scanFiles: changedScanFiles,
-    scanMode: changedScanFiles ? "changed" : "full"
+    scanFiles: changedScanFiles ?? pathspecScanFiles,
+    scanMode: changedScanFiles ? "changed" : pathspecScanFiles ? "pathspec" : "full"
   });
   summarize(report);
 
@@ -301,7 +306,7 @@ function checkFiles(root, report, options) {
     : listGitVisibleFiles(root, { ignoreDirs: SCAN_IGNORE_DIRS, maxFileBytes }) ?? listFiles(root, { ignoreDirs: SCAN_IGNORE_DIRS, maxFileBytes });
 
   report.stats.scanMode = options.scanMode ?? "full";
-  report.stats.changedFiles = options.scanFiles?.length ?? 0;
+  report.stats.changedFiles = report.stats.scanMode === "changed" ? options.scanFiles?.length ?? 0 : 0;
 
   for (const filePath of files) {
     const basename = path.basename(filePath);
@@ -326,7 +331,7 @@ function checkFiles(root, report, options) {
 }
 
 function resolveSelectedFiles(root, relatives, options) {
-  const files = [];
+  const files = new Set();
   for (const relative of relatives) {
     if (isInIgnoredDir(relative, options.ignoreDirs)) continue;
 
@@ -335,12 +340,24 @@ function resolveSelectedFiles(root, relatives, options) {
 
     try {
       const stat = fs.statSync(fullPath);
-      if (stat.isFile() && stat.size <= options.maxFileBytes) files.push(fullPath);
+      if (stat.isFile() && stat.size <= options.maxFileBytes) files.add(fullPath);
+      if (stat.isDirectory()) {
+        for (const filePath of listFiles(fullPath, {
+          ignoreDirs: options.ignoreDirs,
+          maxFileBytes: options.maxFileBytes
+        })) {
+          if (isInsideRoot(root, filePath)) files.add(filePath);
+        }
+      }
     } catch {
       // Ignore paths that disappeared between Git status and file inspection.
     }
   }
-  return files;
+  return [...files];
+}
+
+function normalizePathspecs(paths) {
+  return [...new Set((paths ?? []).map((item) => String(item ?? "").trim()).filter(Boolean))];
 }
 
 function isInsideRoot(root, filePath) {

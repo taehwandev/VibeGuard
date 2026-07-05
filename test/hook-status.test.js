@@ -71,6 +71,45 @@ test("audit changed-only scans only Git changed files", () => {
   assert.equal(report.findings.some((finding) => finding.file === "large.js"), false);
 });
 
+test("audit pathspec scans only requested paths", () => {
+  const root = makeRealGitProject();
+  initProject(root);
+  commitAll(root);
+
+  const secretValue = `sk-proj-${"h".repeat(24)}${"8".repeat(12)}`;
+  fs.writeFileSync(path.join(root, "safe.js"), "console.log('changed');\n", "utf8");
+  fs.writeFileSync(path.join(root, "secret.js"), `const apiToken = "${secretValue}";\n`, "utf8");
+
+  const run = runCli(["audit", root, "--path", "safe.js", "--json"]);
+  assert.equal(run.status, 0, run.stderr || run.stdout);
+
+  const report = JSON.parse(run.stdout);
+  assert.equal(report.stats.scanMode, "pathspec");
+  assert.equal(report.stats.scannedFiles, 1);
+  assert.equal(report.stats.changedFiles, 0);
+  assert.equal(report.findings.some((finding) => finding.file === "secret.js"), false);
+});
+
+test("audit changed-only pathspec filters unrelated changed files", () => {
+  const root = makeRealGitProject();
+  initProject(root);
+  commitAll(root);
+
+  const secretValue = `sk-proj-${"h".repeat(24)}${"8".repeat(12)}`;
+  fs.writeFileSync(path.join(root, "safe.js"), "console.log('changed');\n", "utf8");
+  fs.writeFileSync(path.join(root, "secret.js"), `const apiToken = "${secretValue}";\n`, "utf8");
+
+  const run = runCli(["audit", root, "--changed-only", "--path", "safe.js", "--json"]);
+  assert.equal(run.status, 0, run.stderr || run.stdout);
+
+  const report = JSON.parse(run.stdout);
+  assert.equal(report.stats.scanMode, "changed");
+  assert.equal(report.stats.scannedFiles, 1);
+  assert.equal(report.stats.changedFiles, 1);
+  assert.deepEqual(report.git.changedFiles, ["safe.js"]);
+  assert.equal(report.findings.some((finding) => finding.file === "secret.js"), false);
+});
+
 test("hook run blocks changed secrets without exposing values", () => {
   const root = makeRealGitProject();
   initProject(root);

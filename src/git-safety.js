@@ -24,6 +24,9 @@ export function checkGitSafety(root, report, config, addFinding, options = {}) {
   if (!pathExists(path.join(root, ".git"))) return;
 
   const context = readGitContext(root, config, options.env ?? process.env);
+  if (options.pathspecs?.length) {
+    context.changedFiles = context.changedFiles.filter((file) => matchesPathspec(file, options.pathspecs));
+  }
   report.git = context;
   if (!context.remoteName && context.changedFiles.length === 0) return;
 
@@ -219,6 +222,25 @@ function isSensitiveGitPath(filePath) {
 
 function isPublicReviewPath(filePath) {
   return PUBLIC_REVIEW_PATH_PATTERNS.some((pattern) => pattern.test(filePath));
+}
+
+function matchesPathspec(filePath, pathspecs) {
+  const normalizedFile = normalizePathspec(filePath);
+  return pathspecs.some((pathspec) => {
+    const normalizedPathspec = normalizePathspec(pathspec);
+    return (
+      normalizedFile === normalizedPathspec ||
+      normalizedFile.startsWith(`${normalizedPathspec}/`)
+    );
+  });
+}
+
+function normalizePathspec(value) {
+  return String(value ?? "")
+    .trim()
+    .replace(/\\/g, "/")
+    .replace(/^\.\/+/, "")
+    .replace(/\/+$/g, "");
 }
 
 function isSuspiciouslySimilarName(localName, remoteName) {

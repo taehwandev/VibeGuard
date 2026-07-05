@@ -59,7 +59,8 @@ function main() {
       const auditOptions = {
         rulesPath: parsed.flags.rules,
         language,
-        changedOnly: parsed.flags.changedOnly
+        changedOnly: parsed.flags.changedOnly,
+        paths: parsed.flags.paths
       };
       const report = auditProject(projectRoot, auditOptions);
 
@@ -202,6 +203,11 @@ function parseArgs(args) {
     }
     if (arg === "--changed-only") {
       parsed.flags.changedOnly = true;
+      continue;
+    }
+    if (arg === "--path") {
+      parsed.flags.paths = [...(parsed.flags.paths ?? []), args[index + 1]];
+      index += 1;
       continue;
     }
     if (arg === "--lang") {
