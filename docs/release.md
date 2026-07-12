@@ -62,10 +62,12 @@ npm pack --dry-run
 Use this as the production build equivalent for CLI release work. It verifies
 which files would ship in the npm tarball without publishing anything.
 
-The static website is not part of the npm release. Changes under `site/` deploy
-through `.github/workflows/deploy-pages.yml` when they are pushed to `main`, or
-when that workflow is run manually. Documentation-only or CLI-only changes do
-not trigger a Pages deploy unless `site/` or the Pages workflow changed.
+The static website is not part of the npm release. The `package.json` `files`
+allowlist must exclude `site/`, and `npm pack --dry-run` must confirm that no
+site assets are present in the tarball. Changes under `site/` deploy through
+`.github/workflows/deploy-pages.yml` when they are pushed to `main`, or when
+that workflow is run manually. Documentation-only or CLI-only changes do not
+trigger a Pages deploy unless `site/` or the Pages workflow changed.
 
 ## GitHub Release Flow
 
@@ -82,17 +84,36 @@ git tag: v26.21.0
 
 Release steps:
 
-1. Ensure the working tree is clean.
-2. Run `npm test`.
-3. Run `node src/cli.js audit . --strict`.
-4. Run `npm pack --dry-run`.
-5. Push `main`.
-6. Push the matching release tag, for example `v26.21.0`.
-7. Publish a GitHub Release for that tag.
+1. Fetch current release tags and run `npm run release:version`.
+2. Run `npm run release:prepare` and inspect the resulting package metadata.
+3. Commit the version and any reviewed release-metadata corrections.
+4. Ensure the working tree is clean.
+5. Run `npm test`.
+6. Run `node src/cli.js audit . --strict`.
+7. Run `npm pack --dry-run` and confirm the artifact contents.
+8. Push `main`.
+9. Create and push the matching release tag on that exact commit, for example
+   `v26.21.0`.
+10. Publish a GitHub Release for that tag.
 
 The workflow checks out the GitHub Release tag, verifies it matches
 `package.json`, runs tests and strict audit, checks package contents, then
 publishes to npm.
+
+## Failed Release Recovery
+
+Published npm versions and public release tags are immutable release records.
+Do not move an existing release tag, overwrite a GitHub Release, or republish
+the same package version after a bad release.
+
+Use a forward fix instead:
+
+1. Leave the existing package version, tag, and GitHub Release unchanged.
+2. Fix the release issue on `main`.
+3. Run the release script again so the weekly release count increments.
+4. Repeat the full verification and release flow with the new version and tag.
+5. If consumers must avoid the bad package, deprecate that exact npm version
+   through an approved maintainer action with a short replacement message.
 
 If `node src/cli.js audit . --strict` reports stale guardrails, run the approved
 VibeGuard update flow first, then rerun the strict audit. If it reports a
