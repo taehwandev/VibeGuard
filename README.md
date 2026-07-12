@@ -184,6 +184,9 @@ mode is intentionally guided:
   "repository": {
     "visibility": "unknown"
   },
+  "cost": {
+    "acknowledgedPaidDependencies": []
+  },
   "update": {
     "checkIntervalDays": 7
   },
@@ -194,6 +197,27 @@ mode is intentionally guided:
   }
 }
 ```
+
+After reviewing an existing paid or quota-based package, add its exact package
+name to `cost.acknowledgedPaidDependencies`:
+
+```json
+{
+  "cost": {
+    "acknowledgedPaidDependencies": [
+      "@aws-sdk/client-s3",
+      "@google-cloud/bigquery",
+      "firebase",
+      "firebase-admin"
+    ]
+  }
+}
+```
+
+Acknowledgement records that the dependency received a human cost review. It
+does not remove the package, match related package names, disable other Cost
+findings, or weaken `--strict`. Any unacknowledged or newly added paid
+dependency continues to produce a warning.
 
 ## Site
 

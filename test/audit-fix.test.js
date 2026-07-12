@@ -124,6 +124,7 @@ test("init creates project policy and config", () => {
   assert.equal(config.rulesPath, null);
   assert.equal(Object.hasOwn(config, "maxFileLines"), false);
   assert.equal(config.repository.visibility, "unknown");
+  assert.deepEqual(config.cost.acknowledgedPaidDependencies, []);
   assert.equal(config.update.checkIntervalDays, 7);
   assert.ok(fs.existsSync(path.join(root, ".vibeguard", "update-state.json")));
 
@@ -147,6 +148,28 @@ test("audit reads developer tuning from .vibeguard.json", () => {
   assert.equal(report.findings.some((finding) => finding.file === "small.js" && finding.category === "structure"), false);
 });
 
+test("init preserves reviewed paid dependencies while adding cost defaults", () => {
+  const root = makeTempProject();
+  fs.writeFileSync(
+    path.join(root, ".vibeguard.json"),
+    `${JSON.stringify({
+      mode: "developer",
+      cost: {
+        acknowledgedPaidDependencies: ["firebase"],
+        reviewOwner: "maintainer"
+      }
+    }, null, 2)}\n`,
+    "utf8"
+  );
+
+  initProject(root);
+
+  const config = JSON.parse(fs.readFileSync(path.join(root, ".vibeguard.json"), "utf8"));
+  assert.deepEqual(config.cost.acknowledgedPaidDependencies, ["firebase"]);
+  assert.equal(config.cost.reviewOwner, "maintainer");
+  assert.equal(config.update.checkIntervalDays, 7);
+});
+
 test("audit ignores retired maxFileLines setting", () => {
   const root = makeTempProject();
   initProject(root);
@@ -157,6 +180,68 @@ test("audit ignores retired maxFileLines setting", () => {
 
   const report = auditProject(root);
   assert.equal(report.findings.some((finding) => finding.file === "large.js" && finding.category === "structure"), false);
+});
+
+test("audit acknowledges only exact reviewed paid dependency names", () => {
+  const root = makeTempProject();
+  initProject(root);
+  fs.writeFileSync(
+    path.join(root, "package.json"),
+    `${JSON.stringify({
+      dependencies: {
+        "@aws-sdk/client-s3": "1.0.0",
+        firebase: "1.0.0",
+        "firebase-admin": "1.0.0"
+      }
+    }, null, 2)}\n`,
+    "utf8"
+  );
+  const configPath = path.join(root, ".vibeguard.json");
+  const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+  config.cost.acknowledgedPaidDependencies = [" @AWS-SDK/client-s3 ", "firebase", null, ""];
+  fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+
+  const report = auditProject(root);
+  const acknowledged = report.findings.find(
+    (finding) => finding.category === "cost" && finding.severity === "info"
+  );
+  const warning = report.findings.find(
+    (finding) => finding.category === "cost" && finding.severity === "warn"
+  );
+
+  assert.equal(report.gates.cost.status, "warn");
+  assert.match(acknowledged?.message ?? "", /@aws-sdk\/client-s3, firebase/i);
+  assert.match(warning?.message ?? "", /firebase-admin/);
+  assert.doesNotMatch(warning?.message ?? "", /@aws-sdk\/client-s3/);
+  assert.doesNotMatch(warning?.message ?? "", /(?:^|, )firebase(?:,|$)/);
+
+  const strictRun = runCli(["audit", root, "--json", "--strict"]);
+  assert.equal(strictRun.status, 1, strictRun.stderr || strictRun.stdout);
+});
+
+test("audit keeps the Cost gate passing when every paid dependency is acknowledged", () => {
+  const root = makeTempProject();
+  initProject(root);
+  fs.writeFileSync(
+    path.join(root, "package.json"),
+    `${JSON.stringify({ dependencies: { firebase: "1.0.0", resend: "1.0.0" } }, null, 2)}\n`,
+    "utf8"
+  );
+  const configPath = path.join(root, ".vibeguard.json");
+  const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+  config.cost.acknowledgedPaidDependencies = ["firebase", "resend"];
+  fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+
+  const report = auditProject(root);
+  assert.equal(report.gates.cost.status, "pass");
+  assert.match(report.gates.cost.message, /acknowledged/i);
+  assert.equal(
+    report.findings.some((finding) => finding.category === "cost" && finding.severity === "warn"),
+    false
+  );
+
+  const strictRun = runCli(["audit", root, "--json", "--strict"]);
+  assert.equal(strictRun.status, 0, strictRun.stderr || strictRun.stdout);
 });
 
 test("audit warns when VibeGuard update check state is stale", () => {

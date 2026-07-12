@@ -95,7 +95,7 @@ export function auditProject(projectPath, options = {}) {
   });
   checkEnvSafety(root, report);
   checkPackageScripts(root, report);
-  checkPaidIntegrations(root, report);
+  checkPaidIntegrations(root, report, config);
   const changedScanFiles = options.changedOnly && report.git ? report.git.changedFiles : null;
   const pathspecScanFiles = pathspecs.length > 0 && !changedScanFiles ? pathspecs : null;
   checkFiles(root, report, {
@@ -273,7 +273,7 @@ function checkPackageScripts(root, report) {
   }
 }
 
-function checkPaidIntegrations(root, report) {
+function checkPaidIntegrations(root, report, config) {
   const language = report.language;
   const packageJson = readJsonIfExists(path.join(root, "package.json"));
   if (!packageJson) return;
@@ -290,13 +290,45 @@ function checkPaidIntegrations(root, report) {
 
   if (found.length === 0) return;
 
+  const acknowledgedNames = acknowledgedPaidDependencyNames(config);
+  const acknowledged = found.filter((name) => acknowledgedNames.has(name.toLowerCase()));
+  const unacknowledged = found.filter((name) => !acknowledgedNames.has(name.toLowerCase()));
+
+  if (acknowledged.length > 0) {
+    addFinding(report, {
+      severity: "info",
+      category: "cost",
+      file: "package.json",
+      message: t(language, "finding.acknowledgedPaidDependency.message", {
+        dependencies: acknowledged.slice(0, 5).join(", ")
+      }),
+      recommendation: t(language, "finding.acknowledgedPaidDependency.recommendation")
+    });
+  }
+
+  if (unacknowledged.length === 0) return;
+
   addFinding(report, {
     severity: "warn",
     category: "cost",
     file: "package.json",
-    message: t(language, "finding.paidDependency.message", { dependencies: found.slice(0, 5).join(", ") }),
+    message: t(language, "finding.paidDependency.message", {
+      dependencies: unacknowledged.slice(0, 5).join(", ")
+    }),
     recommendation: t(language, "finding.paidDependency.recommendation")
   });
+}
+
+function acknowledgedPaidDependencyNames(config) {
+  const configured = config?.cost?.acknowledgedPaidDependencies;
+  if (!Array.isArray(configured)) return new Set();
+
+  return new Set(
+    configured
+      .filter((name) => typeof name === "string")
+      .map((name) => name.trim().toLowerCase())
+      .filter(Boolean)
+  );
 }
 
 function checkFiles(root, report, options) {

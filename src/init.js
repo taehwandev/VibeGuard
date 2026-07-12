@@ -51,10 +51,27 @@ function ensureConfig(projectRoot, options) {
   }
 
   const existing = readJsonIfExists(configPath) ?? {};
-  const next = withDefaultUpdateSettings(existing);
+  const next = withDefaultCostSettings(withDefaultUpdateSettings(existing));
   if (JSON.stringify(next) === JSON.stringify(existing)) return null;
   writeTextFile(configPath, `${JSON.stringify(next, null, 2)}\n`);
   return "Updated .vibeguard.json.";
+}
+
+function withDefaultCostSettings(config) {
+  const cost = isPlainObject(config.cost) ? config.cost : {};
+  return {
+    ...config,
+    cost: {
+      ...cost,
+      acknowledgedPaidDependencies: Array.isArray(cost.acknowledgedPaidDependencies)
+        ? cost.acknowledgedPaidDependencies
+        : []
+    }
+  };
+}
+
+function isPlainObject(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function defaultConfig(options) {
@@ -64,6 +81,9 @@ function defaultConfig(options) {
     rulesPath: options.rulesPath ?? null,
     repository: {
       visibility: "unknown"
+    },
+    cost: {
+      acknowledgedPaidDependencies: []
     },
     update: {
       checkIntervalDays: DEFAULT_UPDATE_CHECK_INTERVAL_DAYS

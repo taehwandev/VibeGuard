@@ -41,6 +41,29 @@ VIBEGUARD_LANG=ko vibeguard audit .
 - 서버 경계: provider key, service-role key, webhook secret처럼 서버에 있어야 할 값이 클라이언트 코드로 이동하지 않게 합니다.
 - Git 안전: commit 또는 push 전에 원격 저장소, 공개 여부, 변경 파일을 확인합니다.
 
+## 기존 유료 의존성 확인 처리
+
+이미 사용 중인 유료 또는 쿼터 기반 패키지의 예산, 요청 제한, 대안,
+테스트/운영 환경 분리를 검토했다면 `.vibeguard.json`에 정확한 패키지명을
+기록할 수 있습니다.
+
+```json
+{
+  "cost": {
+    "acknowledgedPaidDependencies": [
+      "@aws-sdk/client-s3",
+      "@google-cloud/bigquery",
+      "firebase",
+      "firebase-admin"
+    ]
+  }
+}
+```
+
+확인 처리는 정확히 일치하는 패키지 하나에만 적용됩니다. 관련 패키지를
+묵시적으로 함께 승인하거나 `--strict`를 완화하지 않습니다. 목록에 없는
+기존 의존성이나 새로 추가된 유료 의존성은 계속 Cost 경고를 발생시킵니다.
+
 ## 상태 표시
 
 VibeGuard는 색상만으로 상태를 구분하지 않습니다.
