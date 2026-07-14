@@ -80,7 +80,10 @@ blocked by the security scanner.
 
 VibeGuard also warns when the remote repository name is very close to the local
 project name but not exact. This catches mistakes such as pushing a local
-project to a similarly named public or production repository.
+project to a similarly named public or production repository. It ignores a
+directory-derived name in a linked Git worktree, because that directory is a
+normal local alias rather than the repository identity. Package names and
+ordinary checkout directory names remain protected by this warning.
 
 ## Key And Secret Rules
 

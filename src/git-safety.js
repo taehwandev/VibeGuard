@@ -43,7 +43,12 @@ export function checkGitSafety(root, report, config, addFinding, options = {}) {
     });
   }
 
-  if (context.remoteName && context.projectName && isSuspiciouslySimilarName(context.projectName, context.remoteName)) {
+  if (
+    context.remoteName &&
+    context.projectName &&
+    !context.isLinkedWorktreeDirectoryAlias &&
+    isSuspiciouslySimilarName(context.projectName, context.remoteName)
+  ) {
     addFinding(report, {
       severity: "warn",
       category: "repository",
@@ -72,14 +77,15 @@ export function checkGitSafety(root, report, config, addFinding, options = {}) {
 function readGitContext(root, config, env) {
   const remoteUrl = gitOutput(root, ["config", "--get", "remote.origin.url"]) || null;
   const remote = parseGitRemote(remoteUrl);
-  const projectName = detectProjectName(root);
+  const project = detectProjectName(root);
   const visibility = resolveRepositoryVisibility(root, config, remote, env);
 
   return {
     remote: remote ? `${remote.owner}/${remote.repo}` : null,
     remoteHost: remote?.host ?? null,
     remoteName: remote?.repo ?? null,
-    projectName,
+    projectName: project.name,
+    isLinkedWorktreeDirectoryAlias: project.source === "directory" && isLinkedGitWorktree(root),
     visibility: visibility.value,
     visibilitySource: visibility.source,
     changedFiles: readGitChangedFiles(root)
@@ -150,7 +156,15 @@ function remoteFromPath(host, remotePath) {
 function detectProjectName(root) {
   const packageJson = readJsonIfExists(path.join(root, "package.json"));
   const packageName = packageJson?.name?.replace(/^@[^/]+\//, "");
-  return packageName || path.basename(root);
+  if (packageName) return { name: packageName, source: "package" };
+  return { name: path.basename(root), source: "directory" };
+}
+
+function isLinkedGitWorktree(root) {
+  const gitDirectory = gitOutput(root, ["rev-parse", "--git-dir"]);
+  const commonDirectory = gitOutput(root, ["rev-parse", "--git-common-dir"]);
+  if (!gitDirectory || !commonDirectory) return false;
+  return path.resolve(root, gitDirectory) !== path.resolve(root, commonDirectory);
 }
 
 function githubActionsVisibility(remote, env) {

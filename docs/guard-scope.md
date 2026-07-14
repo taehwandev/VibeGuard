@@ -19,7 +19,8 @@ work for approval.
 - Install or refresh local Git `pre-commit` and `pre-push` safety hooks when the
   target project is a Git repository.
 - Check Git remote naming, configured repository visibility, and changed files
-  before commit or push.
+  before commit or push, while ignoring directory aliases from linked Git
+  worktrees.
 - Record optional execution evidence from supported agent hooks.
 - Keep server-only secrets from being moved into client code or public bundles.
 - Warn or block before destructive scripts, database work, production deploys,

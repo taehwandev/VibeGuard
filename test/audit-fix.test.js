@@ -583,6 +583,31 @@ test("audit warns when git remote name is suspiciously similar but not exact", (
   assert.match(finding.message, /client-admin-prod/);
 });
 
+test("audit warns when an ordinary checkout directory is suspiciously similar to its remote", () => {
+  const root = makeNamedRealGitProject("client-admin");
+  runGit(root, ["remote", "add", "origin", "https://github.com/example/client-admin-prod.git"]);
+
+  const report = auditProject(root);
+  const finding = report.findings.find((item) => item.message.includes("remote name"));
+  assert.equal(finding?.severity, "warn");
+  assert.match(finding.message, /client-admin/);
+  assert.match(finding.message, /client-admin-prod/);
+});
+
+test("audit ignores a linked worktree directory alias that is similar to its remote", () => {
+  const primary = makeRealGitProject();
+  const worktreesRoot = fs.mkdtempSync(path.join(os.tmpdir(), "vibeguard-worktrees-"));
+  const linked = path.join(worktreesRoot, "client-admin");
+  fs.writeFileSync(path.join(primary, "README.md"), "# test\n", "utf8");
+  runGit(primary, ["add", "README.md"]);
+  runGit(primary, ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "initial"]);
+  runGit(primary, ["remote", "add", "origin", "https://github.com/example/client-admin-prod.git"]);
+  runGit(primary, ["worktree", "add", "-qb", `linked-${process.pid}-${Date.now()}`, linked]);
+
+  const report = auditProject(linked);
+  assert.equal(report.findings.some((item) => item.message.includes("remote name")), false);
+});
+
 test("audit exits non-zero for blocked reports and strict warnings", () => {
   const blockedRoot = makeTempProject();
   const secretValue = `sk-proj-${"b".repeat(24)}${"2".repeat(12)}`;
@@ -802,6 +827,14 @@ function makeTempProject() {
 
 function makeRealGitProject() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "vibeguard-git-test-"));
+  runGit(root, ["init", "-q"]);
+  return root;
+}
+
+function makeNamedRealGitProject(name) {
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), "vibeguard-git-test-"));
+  const root = path.join(parent, name);
+  fs.mkdirSync(root);
   runGit(root, ["init", "-q"]);
   return root;
 }
