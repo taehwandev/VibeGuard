@@ -139,6 +139,13 @@ The agent should inspect, auto-fix low-risk safety issues, and only ask the user
 when a step can destroy data, spend money, deploy externally, or requires private
 credentials.
 
+## Deployment Confirmation Rule
+
+For every real external production deployment, and any deployment whose target
+is unknown, immediately before execution state the exact target and action and
+wait for fresh user confirmation. Never infer, reuse, or bypass approval from
+earlier wording such as "deploy it" or "handle it yourself".
+
 ## Update Cadence Rule
 
 Do not refresh VibeGuard on every task. Run the audit first. If the audit says
@@ -213,7 +220,7 @@ deployment, or credentials:
 3. If \`vibeguard\` is unavailable, run \`npx --yes @taehwandev/vibeguard@latest audit .\` instead and use the same \`npx --yes @taehwandev/vibeguard@latest ...\` form for fixes.
 4. If fixable findings exist, run \`vibeguard audit . --fix\` before implementing.
 5. Never print detected secret values. Keep real secrets only in ignored runtime env files and keep env templates such as \`.env.example\` and \`.env.sample\` value-free.
-6. Ask before deleting data, running migrations, deploying to production, increasing paid API/model usage, adding recurring infrastructure, or changing credentials.
+6. Ask before deleting data, running migrations, deploying to production, increasing paid API/model usage, adding recurring infrastructure, or changing credentials. For every real external production deployment, and any deployment whose target is unknown, immediately before execution state the exact target and action and wait for fresh user confirmation. Never infer, reuse, or bypass approval from earlier wording such as "deploy it" or "handle it yourself".
 7. Prefer cost-aware architecture. Before adding a paid service, database, queue, background worker, model call, analytics SDK, or cloud resource, explain why existing code or a simpler local/server-side design is insufficient.
 8. For web apps, commonize repeated API/model/provider calls behind shared server-side helpers or endpoints. Prefer server-side caching, batching, and rate limits before adding new client-side call paths.
 9. Before commit or push, verify \`git remote -v\`, repository visibility, and changed files. If the repository is public or visibility is unknown, stop before pushing secrets, env files, credentials, deployment, infrastructure, or paid-service changes.

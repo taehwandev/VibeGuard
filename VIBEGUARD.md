@@ -19,6 +19,13 @@ When VibeGuard finds an issue the tool can fix safely, it should fix it before
 asking the user. Ask the user only when the next step can destroy data, spend
 money, deploy externally, or requires private credentials.
 
+## Deployment Confirmation Rule
+
+For every real external production deployment, and any deployment whose target
+is unknown, immediately before execution state the exact target and action and
+wait for fresh user confirmation. Never infer, reuse, or bypass approval from
+earlier wording such as "deploy it" or "handle it yourself".
+
 ## Update Cadence Rule
 
 Do not refresh VibeGuard on every task. Run the audit first. If the audit says

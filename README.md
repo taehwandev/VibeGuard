@@ -31,7 +31,11 @@ Rules:
   enter fresh values only through local provider UI or secret-store prompts.
 - Preserve existing repo-local instructions.
 - Stop and ask before destructive, costly, production, credential, or
-  data-changing work.
+  data-changing work. For every real external production deployment, and any
+  deployment whose target is unknown, immediately before execution state the
+  exact target and action and wait for fresh user confirmation. Never infer,
+  reuse, or bypass approval from earlier wording such as "deploy it" or
+  "handle it yourself".
 - Before commit or push, verify `git remote -v`, repository visibility, and
   changed files. Public or unknown-visibility repositories require extra review
   before pushing credentials, env files, deployment, infrastructure, or

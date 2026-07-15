@@ -85,7 +85,11 @@ approves the next risky step.
 - Keep provider keys, database URLs, service-role keys, signing secrets, and
   webhook secrets server-side only.
 - Ask before deleting data, running migrations, deploying to production,
-  increasing paid API/model usage, or changing credentials.
+  increasing paid API/model usage, or changing credentials. For every real
+  external production deployment, and any deployment whose target is unknown,
+  immediately before execution state the exact target and action and wait for
+  fresh user confirmation. Never infer, reuse, or bypass approval from earlier
+  wording such as "deploy it" or "handle it yourself".
 - Confirm Git remote target, repository visibility, and changed files before
   commit or push. Treat public or unknown visibility as higher risk.
 - Use cost-aware architecture. Before adding a paid service, database, queue,

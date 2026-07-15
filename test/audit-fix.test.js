@@ -429,6 +429,9 @@ test("prompt includes actionable guardrails", () => {
   assert.match(prompt, /Add checkout/);
   assert.match(prompt, /If you find a secret value, do not print it/);
   assert.match(prompt, /Do not delete databases, run migrations, deploy to production/);
+  assert.match(prompt, /every real external production deployment, and any deployment whose target is unknown/);
+  assert.match(prompt, /immediately before execution state the exact target and action and wait for fresh user confirmation/);
+  assert.match(prompt, /Never infer, reuse, or bypass approval from earlier wording such as "deploy it" or "handle it yourself"/);
   assert.match(prompt, /do not claim verification that was not observed/);
   assert.match(prompt, /Prefer cost-aware architecture/);
   assert.match(prompt, /commonize repeated API\/model\/provider calls/);
@@ -729,6 +732,9 @@ test("audit report and prompt support Korean localization", () => {
   assert.match(prompt, /✅ 진행 가능/);
   assert.doesNotMatch(prompt, /🟢/);
   assert.match(prompt, /비밀값을 발견하면 값을 출력하지 마세요/);
+  assert.match(prompt, /실제 외부 운영 배포와 대상이 불명확한 모든 배포/);
+  assert.match(prompt, /실행 직전에 정확한 대상과 작업을 명시하고, 사용자의 새 승인을 기다리세요/);
+  assert.match(prompt, /승인을 추론·재사용·우회하지 마세요/);
 });
 
 test("rule library loads core safety and engineering cards when available", () => {
@@ -803,6 +809,9 @@ test("init updates only the managed VibeGuard agent instruction block", () => {
   assert.match(agentInstructions, /Keep this footer\./);
   assert.match(agentInstructions, /<!-- vibeguard:start version=1 -->/);
   assert.doesNotMatch(agentInstructions, /old instructions/);
+  assert.match(agentInstructions, /every real external production deployment, and any deployment whose target is unknown/);
+  assert.match(agentInstructions, /immediately before execution state the exact target and action and wait for fresh user confirmation/);
+  assert.match(agentInstructions, /Never infer, reuse, or bypass approval from earlier wording such as "deploy it" or "handle it yourself"/);
 });
 
 test("release version uses ISO week and weekly release count", () => {

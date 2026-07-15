@@ -24,7 +24,11 @@ work for approval.
 - Record optional execution evidence from supported agent hooks.
 - Keep server-only secrets from being moved into client code or public bundles.
 - Warn or block before destructive scripts, database work, production deploys,
-  credential changes, and paid API/model usage.
+  credential changes, and paid API/model usage. Before every real external
+  production deployment, and any deployment whose target is unknown, require a
+  fresh user confirmation immediately before execution that states the exact
+  target and action; never infer, reuse, or bypass approval from earlier
+  wording such as "deploy it" or "handle it yourself".
 - Block sensitive Git changes when repository visibility is public or unknown;
   warn on similar-but-not-exact remote names and public deployment or
   infrastructure changes.
