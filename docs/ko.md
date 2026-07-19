@@ -75,7 +75,7 @@ VibeGuard는 색상만으로 상태를 구분하지 않습니다.
 
 ## Tao Agent OS와의 관계
 
-VibeGuard는 안전 게이트입니다. Tao Agent OS는 계획, 구현, 검증, 리뷰, 인수인계에 쓰는 외부 실행 플레이북입니다.
+VibeGuard는 안전 게이트입니다. Tao Agent OS는 계획, 구현, 검증, 리뷰, 인수인계에 쓰는 외부 에이전트 실행 체계입니다.
 
 이 저장소는 Tao Agent OS를 복사하거나 포함하지 않습니다. 필요한 경우 기존 로컬 Tao Agent OS 경로를 설정해 읽고, VibeGuard는 비밀값, 비용, 데이터, 배포, 저장소 위험을 먼저 막는 역할에 집중합니다.
 

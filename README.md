@@ -168,7 +168,7 @@ review should continue to use `vibeguard audit .` or `vibeguard audit . --strict
 
 ## Tao Agent OS Relationship
 
-VibeGuard is the safety gate. Tao Agent OS is the external execution playbook
+VibeGuard is the safety gate. Tao Agent OS is the external agent execution layer
 for planning, implementation, verification, review, and handoff. This repository
 links to an existing local Tao Agent OS path when configured, but it does not
 clone, vendor, or copy Tao Agent OS into a target project by default.
