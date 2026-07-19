@@ -1,7 +1,7 @@
 {
   "mode": "guided",
   "display": "emoji",
-  "rulesPath": "~/Documents/KeyFlowVault/AgentPlaybook",
+  "rulesPath": "~/git/tao-agent-os",
   "maxFileLines": 800,
   "repository": {
     "visibility": "public"
