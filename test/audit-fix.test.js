@@ -219,6 +219,49 @@ test("audit acknowledges only exact reviewed paid dependency names", () => {
   assert.equal(strictRun.status, 1, strictRun.stderr || strictRun.stdout);
 });
 
+test("audit accepts object acknowledgements and never blocks on paid dependencies", () => {
+  const root = makeTempProject();
+  initProject(root);
+  fs.writeFileSync(
+    path.join(root, "package.json"),
+    `${JSON.stringify({ dependencies: { firebase: "1.0.0", resend: "1.0.0" } }, null, 2)}\n`,
+    "utf8"
+  );
+  const configPath = path.join(root, ".vibeguard.json");
+  const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+  config.cost.acknowledgedPaidDependencies = [
+    { name: " Firebase ", reason: "Spark free tier, under the daily read quota", reviewedAt: "2026-07-19" },
+    "resend"
+  ];
+  fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+
+  const report = auditProject(root);
+  const withoutReason = report.findings.find((finding) => finding.file === ".vibeguard.json" && finding.category === "cost");
+
+  assert.equal(report.gates.cost.status, "pass");
+  assert.equal(report.summary.blocks, 0);
+  assert.match(withoutReason?.message ?? "", /resend/);
+  assert.doesNotMatch(withoutReason?.message ?? "", /firebase/i);
+  assert.equal(withoutReason?.severity, "info");
+});
+
+test("audit never blocks on an unacknowledged paid dependency", () => {
+  const root = makeTempProject();
+  initProject(root);
+  fs.writeFileSync(
+    path.join(root, "package.json"),
+    `${JSON.stringify({ dependencies: { stripe: "1.0.0" } }, null, 2)}\n`,
+    "utf8"
+  );
+
+  const report = auditProject(root);
+  const finding = report.findings.find((item) => item.category === "cost");
+
+  assert.equal(finding?.severity, "warn");
+  assert.equal(report.summary.blocks, 0);
+  assert.equal(runCli(["audit", root, "--json"]).status, 0);
+});
+
 test("audit keeps the Cost gate passing when every paid dependency is acknowledged", () => {
   const root = makeTempProject();
   initProject(root);

@@ -290,9 +290,10 @@ function checkPaidIntegrations(root, report, config) {
 
   if (found.length === 0) return;
 
-  const acknowledgedNames = acknowledgedPaidDependencyNames(config);
-  const acknowledged = found.filter((name) => acknowledgedNames.has(name.toLowerCase()));
-  const unacknowledged = found.filter((name) => !acknowledgedNames.has(name.toLowerCase()));
+  const acknowledgedReasons = acknowledgedPaidDependencyReasons(config);
+  const acknowledged = found.filter((name) => acknowledgedReasons.has(name.toLowerCase()));
+  const unacknowledged = found.filter((name) => !acknowledgedReasons.has(name.toLowerCase()));
+  const withoutReason = acknowledged.filter((name) => !acknowledgedReasons.get(name.toLowerCase()));
 
   if (acknowledged.length > 0) {
     addFinding(report, {
@@ -303,6 +304,18 @@ function checkPaidIntegrations(root, report, config) {
         dependencies: acknowledged.slice(0, 5).join(", ")
       }),
       recommendation: t(language, "finding.acknowledgedPaidDependency.recommendation")
+    });
+  }
+
+  if (withoutReason.length > 0) {
+    addFinding(report, {
+      severity: "info",
+      category: "cost",
+      file: ".vibeguard.json",
+      message: t(language, "finding.paidDependencyWithoutReason.message", {
+        dependencies: withoutReason.slice(0, 5).join(", ")
+      }),
+      recommendation: t(language, "finding.paidDependencyWithoutReason.recommendation")
     });
   }
 
@@ -319,16 +332,22 @@ function checkPaidIntegrations(root, report, config) {
   });
 }
 
-function acknowledgedPaidDependencyNames(config) {
+function acknowledgedPaidDependencyReasons(config) {
   const configured = config?.cost?.acknowledgedPaidDependencies;
-  if (!Array.isArray(configured)) return new Set();
+  const reasons = new Map();
+  if (!Array.isArray(configured)) return reasons;
 
-  return new Set(
-    configured
-      .filter((name) => typeof name === "string")
-      .map((name) => name.trim().toLowerCase())
-      .filter(Boolean)
-  );
+  for (const entry of configured) {
+    const raw = typeof entry === "string" ? entry : entry?.name;
+    if (typeof raw !== "string") continue;
+
+    const name = raw.trim().toLowerCase();
+    if (!name) continue;
+
+    const reason = typeof entry?.reason === "string" ? entry.reason.trim() : "";
+    reasons.set(name, reason);
+  }
+  return reasons;
 }
 
 function checkFiles(root, report, options) {

@@ -203,25 +203,34 @@ mode is intentionally guided:
 ```
 
 After reviewing an existing paid or quota-based package, add its exact package
-name to `cost.acknowledgedPaidDependencies`:
+name to `cost.acknowledgedPaidDependencies`. An entry may be a bare name or an
+object that records why the cost is acceptable:
 
 ```json
 {
   "cost": {
     "acknowledgedPaidDependencies": [
       "@aws-sdk/client-s3",
-      "@google-cloud/bigquery",
-      "firebase",
-      "firebase-admin"
+      {
+        "name": "firebase-admin",
+        "reason": "Spark free tier, well under the 50k daily document reads",
+        "reviewedAt": "2026-07-19"
+      }
     ]
   }
 }
 ```
 
-Acknowledgement records that the dependency received a human cost review. It
-does not remove the package, match related package names, disable other Cost
-findings, or weaken `--strict`. Any unacknowledged or newly added paid
-dependency continues to produce a warning.
+Many of these services are free below a usage threshold, so the reason field is
+where that threshold is written down. Both forms acknowledge the dependency;
+entries without a `reason` are additionally listed as an informational finding
+so the missing basis stays visible without failing the audit.
+
+Paid dependency findings are warnings, never blocks: `vibeguard audit` exits `0`
+for them unless you pass `--strict`. Acknowledgement records that the dependency
+received a human cost review. It does not remove the package, match related
+package names, disable other Cost findings, or weaken `--strict`. Any
+unacknowledged or newly added paid dependency continues to produce a warning.
 
 ## Site
 
