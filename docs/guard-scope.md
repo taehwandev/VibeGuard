@@ -42,7 +42,7 @@ work for approval.
 
 ## Non-Responsibilities
 
-- Do not clone, vendor, install, or link AgentPlaybook or any other external
+- Do not clone, vendor, install, or link Tao Agent OS or any other external
   playbook by default.
 - Do not copy large guidance libraries into a target repository.
 - Do not replace project-specific agent instructions, coding conventions,
@@ -57,7 +57,7 @@ work for approval.
 - Do not duplicate client-side fetching, paid provider calls, or model calls in
   multiple components when a shared server-side access path can handle it.
 - Do not enforce application URL placement policy. Environment-specific URL
-  guidance belongs in AgentPlaybook skills, project instructions, or platform
+  guidance belongs in Tao Agent OS skills, project instructions, or platform
   docs rather than this guardrail layer.
 - Do not claim full agent control, rollback, or retry enforcement from execution
   evidence alone.
