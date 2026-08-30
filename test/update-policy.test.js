@@ -7,14 +7,15 @@ import path from "node:path";
 import test from "node:test";
 import { auditProject } from "../src/audit.js";
 import { initProject } from "../src/init.js";
-import { makeTempProject, runCli } from "../test-support/helpers.js";
+import { projects } from "./project-fixtures.js";
+import { runCli } from "./cli-runner.js";
 
 test("a stale update check is reported without failing a strict audit", () => {
   // VibeGuard installs `audit . --strict` into pre-push itself, and strict
   // fails on any warning. Grading this reminder as one blocked every push in a
   // repository whose guardrails had aged past the interval -- for a reason
   // unrelated to what was being pushed, with bypassing the hook as the way out.
-  const root = makeTempProject();
+  const root = projects.temp();
   initProject(root);
   fs.writeFileSync(
     path.join(root, ".vibeguard", "update-state.json"),
@@ -35,7 +36,7 @@ test("a stale update check is reported without failing a strict audit", () => {
 
 test("a real warning still fails a strict audit", () => {
   // The reminder stopped blocking; the safety gates must not have followed it.
-  const root = makeTempProject();
+  const root = projects.temp();
   initProject(root);
   // Assembled rather than written out: a literal of this shape in a committed
   // file is itself a finding, and VibeGuard audits its own repository.
@@ -48,7 +49,7 @@ test("a real warning still fails a strict audit", () => {
 });
 
 test("audit treats missing VibeGuard update check state as informational", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   initProject(root);
   fs.rmSync(path.join(root, ".vibeguard", "update-state.json"));
 
@@ -59,7 +60,7 @@ test("audit treats missing VibeGuard update check state as informational", () =>
 });
 
 test("audit exits non-zero for blocked reports and strict warnings", () => {
-  const blockedRoot = makeTempProject();
+  const blockedRoot = projects.temp();
   const secretValue = `sk-proj-${"b".repeat(24)}${"2".repeat(12)}`;
   fs.writeFileSync(path.join(blockedRoot, "app.js"), `const apiToken = "${secretValue}";\n`, "utf8");
 
@@ -67,7 +68,7 @@ test("audit exits non-zero for blocked reports and strict warnings", () => {
   assert.equal(blocked.status, 2);
   assert.match(blocked.stdout, /"status": "block"/);
 
-  const warningRoot = makeTempProject();
+  const warningRoot = projects.temp();
   const defaultWarning = runCli(["audit", warningRoot, "--json"]);
   assert.equal(defaultWarning.status, 0);
 

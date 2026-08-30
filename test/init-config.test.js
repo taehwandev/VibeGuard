@@ -9,10 +9,11 @@ import path from "node:path";
 import test from "node:test";
 import { auditProject } from "../src/audit.js";
 import { initProject } from "../src/init.js";
-import { makeTempProject, runCli } from "../test-support/helpers.js";
+import { projects } from "./project-fixtures.js";
+import { runCli } from "./cli-runner.js";
 
 test("init creates project policy and config", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   const applied = initProject(root);
 
   assert.ok(applied.includes("Created .vibeguard.json."));
@@ -74,7 +75,7 @@ test("init creates project policy and config", () => {
 });
 
 test("audit reads developer tuning from .vibeguard.json", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   initProject(root);
   fs.writeFileSync(
     path.join(root, ".vibeguard.json"),
@@ -90,7 +91,7 @@ test("audit reads developer tuning from .vibeguard.json", () => {
 });
 
 test("init preserves reviewed paid dependencies while adding cost defaults", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   fs.writeFileSync(
     path.join(root, ".vibeguard.json"),
     `${JSON.stringify({
@@ -112,7 +113,7 @@ test("init preserves reviewed paid dependencies while adding cost defaults", () 
 });
 
 test("audit ignores retired maxFileLines setting", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   initProject(root);
   fs.writeFileSync(path.join(root, ".vibeguard.json"), `${JSON.stringify({ maxFileLines: 2 }, null, 2)}\n`, "utf8");
 
@@ -124,7 +125,7 @@ test("audit ignores retired maxFileLines setting", () => {
 });
 
 test("audit acknowledges only exact reviewed paid dependency names", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   initProject(root);
   fs.writeFileSync(
     path.join(root, "package.json"),
@@ -161,7 +162,7 @@ test("audit acknowledges only exact reviewed paid dependency names", () => {
 });
 
 test("audit accepts object acknowledgements and never blocks on paid dependencies", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   initProject(root);
   fs.writeFileSync(
     path.join(root, "package.json"),
@@ -187,7 +188,7 @@ test("audit accepts object acknowledgements and never blocks on paid dependencie
 });
 
 test("audit never blocks on an unacknowledged paid dependency", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   initProject(root);
   fs.writeFileSync(
     path.join(root, "package.json"),
@@ -204,7 +205,7 @@ test("audit never blocks on an unacknowledged paid dependency", () => {
 });
 
 test("audit keeps the Cost gate passing when every paid dependency is acknowledged", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   initProject(root);
   fs.writeFileSync(
     path.join(root, "package.json"),
@@ -229,7 +230,7 @@ test("audit keeps the Cost gate passing when every paid dependency is acknowledg
 });
 
 test("init preserves existing shell hooks while adding VibeGuard checks", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   const hooksRoot = path.join(root, ".git", "hooks");
   fs.mkdirSync(hooksRoot, { recursive: true });
   fs.writeFileSync(path.join(hooksRoot, "pre-commit"), "#!/bin/sh\nset -e\necho existing hook\n", "utf8");
@@ -245,7 +246,7 @@ test("init preserves existing shell hooks while adding VibeGuard checks", () => 
 });
 
 test("init wraps existing non-shell hooks instead of overwriting them", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   const hooksRoot = path.join(root, ".git", "hooks");
   fs.mkdirSync(hooksRoot, { recursive: true });
   fs.writeFileSync(path.join(hooksRoot, "pre-push"), "#!/usr/bin/env node\nconsole.log('existing hook');\n", "utf8");
@@ -261,7 +262,7 @@ test("init wraps existing non-shell hooks instead of overwriting them", () => {
 });
 
 test("init migrates legacy VibeGuard hook markers while preserving existing shell hook body", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   const hooksRoot = path.join(root, ".git", "hooks");
   fs.mkdirSync(hooksRoot, { recursive: true });
   fs.writeFileSync(
@@ -294,7 +295,7 @@ test("init migrates legacy VibeGuard hook markers while preserving existing shel
 });
 
 test("init updates only the managed VibeGuard agent instruction block", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   fs.writeFileSync(
     path.join(root, "AGENTS.md"),
     [

@@ -1,9 +1,10 @@
 // Scanning and fixing: secrets, the values a report must never echo, the
 // signals that are only shaped like secrets, and the repository state around
 // them. Setup and update-check concerns now live in init-config.test.js and
-// update-policy.test.js; the shared project builders live in
-// ../test-support/helpers.js, outside test/ because `node --test` runs every
-// file under that directory and would count a helper module as a suite.
+// update-policy.test.js; the shared fixtures live in project-fixtures.js and
+// cli-runner.js. The test script names `test/*.test.js` rather than the whole
+// directory, because `node --test` otherwise loads a fixture module as a suite
+// and counts it.
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
@@ -16,16 +17,11 @@ import { initProject } from "../src/init.js";
 import { buildAgentPrompt } from "../src/prompt.js";
 import { loadRuleLibrary } from "../src/rules.js";
 import { isoWeekParts, nextReleaseVersion, parseDate } from "../scripts/release-version.js";
-import {
-  makeNamedRealGitProject,
-  makeRealGitProject,
-  makeTempProject,
-  runCli,
-  runGit
-} from "../test-support/helpers.js";
+import { projects } from "./project-fixtures.js";
+import { runCli } from "./cli-runner.js";
 
 test("audit detects and fixes a hard-coded JavaScript secret without exposing it in reports", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   const secretValue = `sk-proj-${"a".repeat(24)}${"1".repeat(12)}`;
   fs.writeFileSync(path.join(root, "app.js"), `const openaiApiKey = "${secretValue}";\n`, "utf8");
 
@@ -55,7 +51,7 @@ test("audit detects and fixes a hard-coded JavaScript secret without exposing it
 });
 
 test("fix adds os import and environment reads for Python assignments", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   const secretValue = `ghp_${"a".repeat(24)}${"1".repeat(12)}`;
   fs.writeFileSync(path.join(root, "settings.py"), `API_TOKEN = "${secretValue}"\n`, "utf8");
 
@@ -68,7 +64,7 @@ test("fix adds os import and environment reads for Python assignments", () => {
 });
 
 test("audit blocks npm access tokens without exposing them", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   const tokenValue = `npm_${"a".repeat(12)}${"B".repeat(12)}${"3".repeat(12)}`;
   fs.writeFileSync(path.join(root, "notes.md"), `temporary token: ${tokenValue}\n`, "utf8");
 
@@ -81,7 +77,7 @@ test("audit blocks npm access tokens without exposing them", () => {
 });
 
 test("fix creates env example names from existing local env files", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   const secretValue = ["env", "private", "value", "123456789012"].join("_");
   fs.writeFileSync(path.join(root, ".env"), `SERVICE_TOKEN=${secretValue}\nPUBLIC_MODE=true\n`, "utf8");
 
@@ -95,12 +91,12 @@ test("fix creates env example names from existing local env files", () => {
 });
 
 test("env templates are shareable but still scanned for real secrets", () => {
-  const root = makeRealGitProject();
+  const root = projects.realGit();
   fs.writeFileSync(path.join(root, "package.json"), `${JSON.stringify({ name: "env-template-app" }, null, 2)}\n`, "utf8");
-  runGit(root, ["remote", "add", "origin", "https://github.com/example/env-template-app.git"]);
-  runGit(root, ["config", "vibeguard.repositoryVisibility", "public"]);
+  projects.git(root, ["remote", "add", "origin", "https://github.com/example/env-template-app.git"]);
+  projects.git(root, ["config", "vibeguard.repositoryVisibility", "public"]);
   fs.writeFileSync(path.join(root, ".env.sample"), "OPENAI_API_KEY=\nPUBLIC_BASE_URL=http://localhost:3000\n", "utf8");
-  runGit(root, ["add", ".env.sample"]);
+  projects.git(root, ["add", ".env.sample"]);
 
   const safeReport = auditProject(root);
   assert.equal(safeReport.summary.blocks, 0);
@@ -116,18 +112,18 @@ test("env templates are shareable but still scanned for real secrets", () => {
 });
 
 test("runtime env files are protected while existing env templates prevent duplicate examples", () => {
-  const publicRoot = makeRealGitProject();
+  const publicRoot = projects.realGit();
   fs.writeFileSync(path.join(publicRoot, "package.json"), `${JSON.stringify({ name: "runtime-env-app" }, null, 2)}\n`, "utf8");
-  runGit(publicRoot, ["remote", "add", "origin", "https://github.com/example/runtime-env-app.git"]);
-  runGit(publicRoot, ["config", "vibeguard.repositoryVisibility", "public"]);
+  projects.git(publicRoot, ["remote", "add", "origin", "https://github.com/example/runtime-env-app.git"]);
+  projects.git(publicRoot, ["config", "vibeguard.repositoryVisibility", "public"]);
   fs.writeFileSync(path.join(publicRoot, ".env.dev"), "API_URL=http://localhost:3000\n", "utf8");
-  runGit(publicRoot, ["add", ".env.dev"]);
+  projects.git(publicRoot, ["add", ".env.dev"]);
 
   const publicReport = auditProject(publicRoot);
   assert.equal(publicReport.gates.repository.status, "block");
   assert.equal(publicReport.findings.some((finding) => finding.message.includes(".env.dev")), true);
 
-  const templateRoot = makeTempProject();
+  const templateRoot = projects.temp();
   fs.writeFileSync(path.join(templateRoot, ".env.sample"), "SERVICE_TOKEN=\nPUBLIC_MODE=true\n", "utf8");
 
   const applied = applyFixes(templateRoot, auditProject(templateRoot));
@@ -139,7 +135,7 @@ test("runtime env files are protected while existing env templates prevent dupli
 });
 
 test("audit skips gitignored local files and generated output", () => {
-  const root = makeRealGitProject();
+  const root = projects.realGit();
   const secretValue = `sk-proj-${"f".repeat(24)}${"6".repeat(12)}`;
   fs.writeFileSync(path.join(root, ".gitignore"), ".env copy.*\n.vercel/\n", "utf8");
   fs.writeFileSync(path.join(root, ".env copy.local"), `OPENAI_API_KEY=${secretValue}\n`, "utf8");
@@ -153,11 +149,11 @@ test("audit skips gitignored local files and generated output", () => {
 });
 
 test("audit still scans tracked files that also match gitignore", () => {
-  const root = makeRealGitProject();
+  const root = projects.realGit();
   const secretValue = `sk-proj-${"g".repeat(24)}${"7".repeat(12)}`;
   fs.writeFileSync(path.join(root, ".gitignore"), ".env copy.*\n", "utf8");
   fs.writeFileSync(path.join(root, ".env copy.local"), `OPENAI_API_KEY=${secretValue}\n`, "utf8");
-  runGit(root, ["add", "-f", ".env copy.local"]);
+  projects.git(root, ["add", "-f", ".env copy.local"]);
 
   const report = auditProject(root);
   assert.equal(report.summary.blocks, 1);
@@ -166,7 +162,7 @@ test("audit still scans tracked files that also match gitignore", () => {
 });
 
 test("prompt includes actionable guardrails", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   const report = auditProject(root);
   const prompt = buildAgentPrompt(report, "Add checkout");
 
@@ -185,7 +181,7 @@ test("prompt includes actionable guardrails", () => {
 });
 
 test("audit avoids descriptive sensitive-name false positives", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   initProject(root);
   fs.writeFileSync(
     path.join(root, "utils.js"),
@@ -206,7 +202,7 @@ test("audit avoids descriptive sensitive-name false positives", () => {
 });
 
 test("audit warns on generic high-entropy sensitive assignments without auto-quarantine", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   initProject(root);
   const suspiciousValue = "A7f9K2mP8qR4sT6vW9xY1zB3cD5eF";
   fs.writeFileSync(path.join(root, "service.js"), `const serviceToken = "${suspiciousValue}";\n`, "utf8");
@@ -229,7 +225,7 @@ test("audit warns on generic high-entropy sensitive assignments without auto-qua
 });
 
 test("audit blocks database connection strings without exposing values", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   const databaseUrl = ["postgres://admin", "generated-password-123@prod.db.company.com/main"].join(":");
   fs.writeFileSync(path.join(root, "config.yaml"), `database:\n  url: "${databaseUrl}"\n`, "utf8");
 
@@ -239,7 +235,7 @@ test("audit blocks database connection strings without exposing values", () => {
 });
 
 test("audit ignores at signs in public http url paths and queries", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   const googleFontUrl = ["https://fonts.googleapis.com/css2?family=Inter", "wght@900&text=KEYLOW"].join(":");
   const emailSearchUrl = "https://example.com/search?q=user@example.com";
   const scopedPackageUrl = "https://example.com/path/@scope/package";
@@ -261,14 +257,14 @@ test("audit ignores at signs in public http url paths and queries", () => {
 });
 
 test("audit ignores public telemetry DSNs without URL passwords", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   const publicTelemetryUrl = ["https://public1234567890abcdef", "o123456.ingest.sentry.io/123456"].join("@");
   fs.writeFileSync(path.join(root, "sentry.server.config.ts"), `Sentry.init({ dsn: "${publicTelemetryUrl}" });\n`, "utf8");
   assert.equal(auditProject(root).findings.some((finding) => finding.category === "security" && finding.severity === "block"), false);
 });
 
 test("audit blocks credential-bearing database and http urls", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   const databaseUrls = [
     ["postgres://user", "generated-password-123@example.com:5432/db"].join(":"),
     ["mysql://user", "generated-password-123@example.com/db"].join(":"),
@@ -288,12 +284,12 @@ test("audit blocks credential-bearing database and http urls", () => {
 });
 
 test("audit blocks sensitive git changes when repository visibility is public", () => {
-  const root = makeRealGitProject();
+  const root = projects.realGit();
   fs.writeFileSync(path.join(root, "package.json"), `${JSON.stringify({ name: "customer-app" }, null, 2)}\n`, "utf8");
-  runGit(root, ["remote", "add", "origin", "https://github.com/example/customer-app.git"]);
-  runGit(root, ["config", "vibeguard.repositoryVisibility", "public"]);
+  projects.git(root, ["remote", "add", "origin", "https://github.com/example/customer-app.git"]);
+  projects.git(root, ["config", "vibeguard.repositoryVisibility", "public"]);
   fs.writeFileSync(path.join(root, "prod-service-account.json"), "{}\n", "utf8");
-  runGit(root, ["add", "prod-service-account.json"]);
+  projects.git(root, ["add", "prod-service-account.json"]);
 
   const report = auditProject(root);
   assert.equal(report.gates.repository.status, "block");
@@ -302,12 +298,12 @@ test("audit blocks sensitive git changes when repository visibility is public", 
 });
 
 test("audit warns rather than blocks sensitive git changes in confirmed private repositories", () => {
-  const root = makeRealGitProject();
+  const root = projects.realGit();
   fs.writeFileSync(path.join(root, "package.json"), `${JSON.stringify({ name: "customer-app" }, null, 2)}\n`, "utf8");
-  runGit(root, ["remote", "add", "origin", "git@github.com:example/customer-app.git"]);
-  runGit(root, ["config", "vibeguard.repositoryVisibility", "private"]);
+  projects.git(root, ["remote", "add", "origin", "git@github.com:example/customer-app.git"]);
+  projects.git(root, ["config", "vibeguard.repositoryVisibility", "private"]);
   fs.writeFileSync(path.join(root, "prod-service-account.json"), "{}\n", "utf8");
-  runGit(root, ["add", "prod-service-account.json"]);
+  projects.git(root, ["add", "prod-service-account.json"]);
 
   const report = auditProject(root);
   assert.equal(report.gates.repository.status, "warn");
@@ -316,12 +312,12 @@ test("audit warns rather than blocks sensitive git changes in confirmed private 
 });
 
 test("audit warns when git remote name is suspiciously similar but not exact", () => {
-  const root = makeRealGitProject();
+  const root = projects.realGit();
   fs.writeFileSync(path.join(root, "package.json"), `${JSON.stringify({ name: "client-admin" }, null, 2)}\n`, "utf8");
-  runGit(root, ["remote", "add", "origin", "https://github.com/example/client-admin-prod.git"]);
-  runGit(root, ["config", "vibeguard.repositoryVisibility", "private"]);
+  projects.git(root, ["remote", "add", "origin", "https://github.com/example/client-admin-prod.git"]);
+  projects.git(root, ["config", "vibeguard.repositoryVisibility", "private"]);
   fs.writeFileSync(path.join(root, "index.js"), "console.log('ok');\n", "utf8");
-  runGit(root, ["add", "index.js"]);
+  projects.git(root, ["add", "index.js"]);
 
   const report = auditProject(root);
   const finding = report.findings.find((item) => item.message.includes("remote name"));
@@ -331,8 +327,8 @@ test("audit warns when git remote name is suspiciously similar but not exact", (
 });
 
 test("audit warns when an ordinary checkout directory is suspiciously similar to its remote", () => {
-  const root = makeNamedRealGitProject("client-admin");
-  runGit(root, ["remote", "add", "origin", "https://github.com/example/client-admin-prod.git"]);
+  const root = projects.namedRealGit("client-admin");
+  projects.git(root, ["remote", "add", "origin", "https://github.com/example/client-admin-prod.git"]);
 
   const report = auditProject(root);
   const finding = report.findings.find((item) => item.message.includes("remote name"));
@@ -342,21 +338,21 @@ test("audit warns when an ordinary checkout directory is suspiciously similar to
 });
 
 test("audit ignores a linked worktree directory alias that is similar to its remote", () => {
-  const primary = makeRealGitProject();
+  const primary = projects.realGit();
   const worktreesRoot = fs.mkdtempSync(path.join(os.tmpdir(), "vibeguard-worktrees-"));
   const linked = path.join(worktreesRoot, "client-admin");
   fs.writeFileSync(path.join(primary, "README.md"), "# test\n", "utf8");
-  runGit(primary, ["add", "README.md"]);
-  runGit(primary, ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "initial"]);
-  runGit(primary, ["remote", "add", "origin", "https://github.com/example/client-admin-prod.git"]);
-  runGit(primary, ["worktree", "add", "-qb", `linked-${process.pid}-${Date.now()}`, linked]);
+  projects.git(primary, ["add", "README.md"]);
+  projects.git(primary, ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "initial"]);
+  projects.git(primary, ["remote", "add", "origin", "https://github.com/example/client-admin-prod.git"]);
+  projects.git(primary, ["worktree", "add", "-qb", `linked-${process.pid}-${Date.now()}`, linked]);
 
   const report = auditProject(linked);
   assert.equal(report.findings.some((item) => item.message.includes("remote name")), false);
 });
 
 test("evidence records Claude hook command execution without leaking secrets", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   const secretValue = `sk-proj-${"c".repeat(24)}${"3".repeat(12)}`;
   const npmTokenValue = `npm_${"d".repeat(12)}${"E".repeat(12)}${"4".repeat(12)}`;
   const hookInput = {
@@ -391,7 +387,7 @@ test("evidence records Claude hook command execution without leaking secrets", (
 });
 
 test("evidence redacts credential urls without redacting public at-sign urls", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   const publicUrl = ["https://fonts.googleapis.com/css2?family=Inter", "wght@900&text=KEYLOW"].join(":");
   const privateUrl = ["https://user", "generated-password-123@example.com/private"].join(":");
   const hookInput = {
@@ -418,7 +414,7 @@ test("evidence redacts credential urls without redacting public at-sign urls", (
 });
 
 test("evidence records Claude hook failures and extracts exit code", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   const hookInput = {
     cwd: root,
     hook_event_name: "PostToolUseFailure",
@@ -440,7 +436,7 @@ test("evidence records Claude hook failures and extracts exit code", () => {
 });
 
 test("audit report and prompt support Korean localization", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   initProject(root);
   const report = auditProject(root, { language: "ko" });
 
@@ -464,7 +460,7 @@ test("audit report and prompt support Korean localization", () => {
 });
 
 test("rule library loads core safety and engineering cards when available", () => {
-  const root = makeTempProject();
+  const root = projects.temp();
   const rulesRoot = path.join(root, "rules");
   const commonRoot = path.join(rulesRoot, "common");
   fs.mkdirSync(commonRoot, { recursive: true });
