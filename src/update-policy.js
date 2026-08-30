@@ -79,7 +79,23 @@ export function staleUpdateFinding(projectRoot, config = {}, options = {}) {
   if (!status.due) return null;
 
   return {
-    severity: status.reason === "missing-state" ? "info" : "warn",
+    // Informational, whichever way the state is stale.
+    //
+    // This finding says the guardrails have not been refreshed lately. It says
+    // nothing about the change being audited, and `--strict` fails on any
+    // warning -- which VibeGuard installs into `pre-push` itself. A warning
+    // here therefore blocked every push in a repository whose guardrails had
+    // aged past the interval, for a reason unrelated to what was being pushed,
+    // and the way out was to bypass the hook.
+    //
+    // The two cases were also graded backwards: never having refreshed was
+    // informational, while refreshing eight days ago was a warning, though the
+    // first is strictly less fresh than the second.
+    //
+    // The safety gates are untouched. A secret, a data-loss pattern, a cost
+    // signal or a structural blocker still warns or blocks, and still stops a
+    // strict audit.
+    severity: "info",
     category: "environment",
     action: "update-vibeguard",
     message: t(options.language, "finding.staleUpdate.message", {

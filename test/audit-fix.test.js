@@ -287,7 +287,11 @@ test("audit keeps the Cost gate passing when every paid dependency is acknowledg
   assert.equal(strictRun.status, 0, strictRun.stderr || strictRun.stdout);
 });
 
-test("audit warns when VibeGuard update check state is stale", () => {
+test("a stale update check is reported without failing a strict audit", () => {
+  // VibeGuard installs `audit . --strict` into pre-push itself, and strict
+  // fails on any warning. Grading this reminder as one blocked every push in a
+  // repository whose guardrails had aged past the interval -- for a reason
+  // unrelated to what was being pushed, with bypassing the hook as the way out.
   const root = makeTempProject();
   initProject(root);
   fs.writeFileSync(
@@ -298,9 +302,27 @@ test("audit warns when VibeGuard update check state is stale", () => {
 
   const report = auditProject(root);
   const finding = report.findings.find((item) => item.action === "update-vibeguard");
-  assert.equal(finding?.severity, "warn");
+  assert.equal(finding?.severity, "info");
   assert.match(finding.message, /7-day interval/);
+  assert.equal(report.summary.warnings, 0);
   assert.equal(report.summary.blocks, 0);
+
+  const strictRun = runCli(["audit", root, "--json", "--strict"]);
+  assert.equal(strictRun.status, 0, strictRun.stderr || strictRun.stdout);
+});
+
+test("a real warning still fails a strict audit", () => {
+  // The reminder stopped blocking; the safety gates must not have followed it.
+  const root = makeTempProject();
+  initProject(root);
+  // Assembled rather than written out: a literal of this shape in a committed
+  // file is itself a finding, and VibeGuard audits its own repository.
+  const fixtureKey = ["sk", "live", "0".repeat(20)].join("-");
+  fs.writeFileSync(path.join(root, ".env"), `API_KEY=${fixtureKey}\n`, "utf8");
+  fs.writeFileSync(path.join(root, ".gitignore"), "node_modules\n", "utf8");
+
+  const strictRun = runCli(["audit", root, "--json", "--strict"]);
+  assert.notEqual(strictRun.status, 0, "a secret in a tracked .env must stop a strict audit");
 });
 
 test("audit treats missing VibeGuard update check state as informational", () => {
