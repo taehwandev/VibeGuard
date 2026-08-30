@@ -14,7 +14,7 @@
     "src/"
   ],
   "scripts": {
-    "test": "node --test",
+    "test": "node --test test/*.test.js",
     "start": "node src/cli.js",
     "audit": "node src/cli.js audit",
     "release:version": "node scripts/release-version.js",
