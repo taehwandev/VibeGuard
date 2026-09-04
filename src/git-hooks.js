@@ -6,7 +6,7 @@ import { pathExists, readTextIfExists, writeTextFile } from "./fs-utils.js";
 const HOOK_RULE_START_PATTERN = /^# (?:(?:vibeguard|vibe-guard):start(?: version=\d+)?|vibeguard:managed-hook:start\b.*)$/m;
 const HOOK_RULE_END_PATTERN = /^# (?:(?:vibeguard|vibe-guard):end|vibeguard:managed-hook:end\b.*)$/m;
 const HOOK_RULE_NAME = "vibeguard-preflight";
-const HOOK_RULE_VERSION = 2;
+const HOOK_RULE_VERSION = 3;
 
 const HOOKS = [
   { name: "pre-commit", command: "audit ." },
@@ -88,21 +88,57 @@ function resolveHookPath(projectRoot, hookName) {
 }
 
 function hookBlock(hook) {
+  const body = hook.name === "pre-push"
+    ? prePushHookBody(hook)
+    : auditHookBody(hook);
   return `# vibeguard:managed-hook:start name=${HOOK_RULE_NAME} version=${HOOK_RULE_VERSION} hook=${hook.name}
 # Managed by VibeGuard (@taehwandev/vibeguard). Re-run \`vibeguard update .\` to refresh.
-echo "VibeGuard: running ${hook.name} safety audit..." >&2
+${body}
+# vibeguard:managed-hook:end name=${HOOK_RULE_NAME}`;
+}
+
+function prePushHookBody(hook) {
+  return `vibeguard_push_updates="$(mktemp "\${TMPDIR:-/tmp}/vibeguard-pre-push.XXXXXX")" || exit 1
+trap 'rm -f "$vibeguard_push_updates"' EXIT HUP INT TERM
+cat > "$vibeguard_push_updates" || exit 1
+vibeguard_delete_only=true
+vibeguard_saw_update=false
+while read -r local_ref local_sha remote_ref remote_sha; do
+  vibeguard_saw_update=true
+  case "$local_sha" in
+    ""|*[!0]*) vibeguard_delete_only=false ;;
+  esac
+done < "$vibeguard_push_updates"
+if [ "$vibeguard_saw_update" != "true" ]; then
+  vibeguard_delete_only=false
+fi
+if [ "$vibeguard_delete_only" = "true" ]; then
+  echo "VibeGuard: delete-only push; content audit skipped." >&2
+else
+${auditHookBody(hook, " </dev/null")}
+fi
+vibeguard_status=$?
+exec 0<"$vibeguard_push_updates"
+rm -f "$vibeguard_push_updates"
+trap - EXIT HUP INT TERM
+if [ "$vibeguard_status" -ne 0 ]; then
+  exit "$vibeguard_status"
+fi`;
+}
+
+function auditHookBody(hook, stdinRedirect = "") {
+  return `echo "VibeGuard: running ${hook.name} safety audit..." >&2
 vibeguard_repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$vibeguard_repo_root" || exit 1
 PATH="$vibeguard_repo_root/node_modules/.bin:$PATH"
 if command -v vibeguard >/dev/null 2>&1; then
-  vibeguard ${hook.command}
+  vibeguard ${hook.command}${stdinRedirect}
 elif command -v npx >/dev/null 2>&1; then
-  npx --yes @taehwandev/vibeguard@latest ${hook.command}
+  npx --yes @taehwandev/vibeguard@latest ${hook.command}${stdinRedirect}
 else
   echo "VibeGuard: install Node.js/npm or make vibeguard available before committing or pushing." >&2
   exit 1
-fi
-# vibeguard:managed-hook:end name=${HOOK_RULE_NAME}`;
+fi`;
 }
 
 function wrapperHook(block) {

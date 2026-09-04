@@ -49,6 +49,12 @@ prompt.
 Run `vibeguard audit .` before commits and `vibeguard audit . --strict`
 before pushes or public package publication.
 
+The managed pre-push hook skips that content audit only when every ref update
+is a deletion. A delete-only push transfers no new repository content for the
+scanner to inspect; mixed and ordinary pushes still run the strict audit. The
+hook must replay its captured stdin so unrelated pre-push hooks continue to see
+the original ref updates.
+
 Before commit or push, verify the actual remote target with `git remote -v`,
 confirm whether the repository is public, private, or internal, and review the
 changed files. If visibility is public or unknown, do not push credentials,
