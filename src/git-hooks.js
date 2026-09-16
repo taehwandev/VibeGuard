@@ -6,10 +6,10 @@ import { pathExists, readTextIfExists, writeTextFile } from "./fs-utils.js";
 const HOOK_RULE_START_PATTERN = /^# (?:(?:vibeguard|vibe-guard):start(?: version=\d+)?|vibeguard:managed-hook:start\b.*)$/m;
 const HOOK_RULE_END_PATTERN = /^# (?:(?:vibeguard|vibe-guard):end|vibeguard:managed-hook:end\b.*)$/m;
 const HOOK_RULE_NAME = "vibeguard-preflight";
-const HOOK_RULE_VERSION = 3;
+const HOOK_RULE_VERSION = 4;
 
 const HOOKS = [
-  { name: "pre-commit", command: "audit ." },
+  { name: "pre-commit", command: "hook run . --event pre-commit" },
   { name: "pre-push", command: "audit . --strict" }
 ];
 
