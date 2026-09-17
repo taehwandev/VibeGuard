@@ -10,13 +10,17 @@ import { initProject } from "../src/init.js";
 import { projects } from "./project-fixtures.js";
 import { runCli } from "./cli-runner.js";
 
-test("a stale update check is reported without failing a strict audit", () => {
+test("an explicitly scheduled stale update check is reported without failing a strict audit", () => {
   // VibeGuard installs `audit . --strict` into pre-push itself, and strict
   // fails on any warning. Grading this reminder as one blocked every push in a
   // repository whose guardrails had aged past the interval -- for a reason
   // unrelated to what was being pushed, with bypassing the hook as the way out.
   const root = projects.temp();
   initProject(root);
+  const configPath = path.join(root, ".vibeguard.json");
+  const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+  config.update = { mode: "scheduled", checkIntervalDays: 30 };
+  fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
   fs.writeFileSync(
     path.join(root, ".vibeguard", "update-state.json"),
     `${JSON.stringify({ lastCheckedAt: "2000-01-01T00:00:00.000Z" }, null, 2)}\n`,
@@ -26,7 +30,7 @@ test("a stale update check is reported without failing a strict audit", () => {
   const report = auditProject(root);
   const finding = report.findings.find((item) => item.action === "update-vibeguard");
   assert.equal(finding?.severity, "info");
-  assert.match(finding.message, /7-day interval/);
+  assert.match(finding.message, /30-day interval/);
   assert.equal(report.summary.warnings, 0);
   assert.equal(report.summary.blocks, 0);
 
@@ -48,15 +52,43 @@ test("a real warning still fails a strict audit", () => {
   assert.notEqual(strictRun.status, 0, "a secret in a tracked .env must stop a strict audit");
 });
 
-test("audit treats missing VibeGuard update check state as informational", () => {
+test("default explicit mode ignores missing or stale update state", () => {
   const root = projects.temp();
   initProject(root);
   fs.rmSync(path.join(root, ".vibeguard", "update-state.json"));
 
-  const report = auditProject(root);
-  const finding = report.findings.find((item) => item.action === "update-vibeguard");
-  assert.equal(finding?.severity, "info");
-  assert.equal(report.summary.warnings, 0);
+  assert.equal(
+    auditProject(root).findings.some((item) => item.action === "update-vibeguard"),
+    false
+  );
+  fs.mkdirSync(path.join(root, ".vibeguard"), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, ".vibeguard", "update-state.json"),
+    `${JSON.stringify({ lastCheckedAt: "2000-01-01T00:00:00.000Z" }, null, 2)}\n`,
+    "utf8"
+  );
+  assert.equal(
+    auditProject(root).findings.some((item) => item.action === "update-vibeguard"),
+    false
+  );
+});
+
+test("legacy interval-only config migrates to explicit mode", () => {
+  const root = projects.temp();
+  initProject(root);
+  const configPath = path.join(root, ".vibeguard.json");
+  const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+  config.update = { checkIntervalDays: 7 };
+  fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+
+  initProject(root);
+
+  const migrated = JSON.parse(fs.readFileSync(configPath, "utf8"));
+  assert.deepEqual(migrated.update, { checkIntervalDays: 0, mode: "explicit" });
+  assert.equal(
+    auditProject(root).findings.some((item) => item.action === "update-vibeguard"),
+    false
+  );
 });
 
 test("audit exits non-zero for blocked reports and strict warnings", () => {

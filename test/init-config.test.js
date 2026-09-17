@@ -35,8 +35,8 @@ test("init creates project policy and config", () => {
   assert.match(agentInstructions, /<!-- vibeguard:start version=1 -->/);
   assert.match(agentInstructions, /Keep VibeGuard scoped to guardrails/);
   assert.match(agentInstructions, /Preserve existing repo-local instructions/);
-  assert.match(agentInstructions, /stale VibeGuard guardrails/);
-  assert.match(agentInstructions, /default refresh interval is 7 days/);
+  assert.match(agentInstructions, /only when the user explicitly requests/);
+  assert.doesNotMatch(agentInstructions, /default refresh interval is 7 days/);
   assert.match(agentInstructions, /Before creating a commit, run `vibeguard audit \.`/);
   assert.match(agentInstructions, /Keep secrets server-side/);
   assert.match(agentInstructions, /If the user pastes a secret in chat/);
@@ -69,7 +69,8 @@ test("init creates project policy and config", () => {
   assert.equal(Object.hasOwn(config, "maxFileLines"), false);
   assert.equal(config.repository.visibility, "unknown");
   assert.deepEqual(config.cost.acknowledgedPaidDependencies, []);
-  assert.equal(config.update.checkIntervalDays, 7);
+  assert.equal(config.update.mode, "explicit");
+  assert.equal(config.update.checkIntervalDays, 0);
   assert.ok(fs.existsSync(path.join(root, ".vibeguard", "update-state.json")));
 
   const gitignore = fs.readFileSync(path.join(root, ".gitignore"), "utf8");
@@ -111,7 +112,22 @@ test("init preserves reviewed paid dependencies while adding cost defaults", () 
   const config = JSON.parse(fs.readFileSync(path.join(root, ".vibeguard.json"), "utf8"));
   assert.deepEqual(config.cost.acknowledgedPaidDependencies, ["firebase"]);
   assert.equal(config.cost.reviewOwner, "maintainer");
-  assert.equal(config.update.checkIntervalDays, 7);
+  assert.equal(config.update.mode, "explicit");
+  assert.equal(config.update.checkIntervalDays, 0);
+});
+
+test("init preserves an explicit scheduled update opt-in", () => {
+  const root = projects.temp();
+  fs.writeFileSync(
+    path.join(root, ".vibeguard.json"),
+    `${JSON.stringify({ update: { mode: "scheduled", checkIntervalDays: 30 } }, null, 2)}\n`,
+    "utf8"
+  );
+
+  initProject(root);
+
+  const config = JSON.parse(fs.readFileSync(path.join(root, ".vibeguard.json"), "utf8"));
+  assert.deepEqual(config.update, { mode: "scheduled", checkIntervalDays: 30 });
 });
 
 test("audit ignores retired maxFileLines setting", () => {

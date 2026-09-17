@@ -26,12 +26,12 @@ is unknown, immediately before execution state the exact target and action and
 wait for fresh user confirmation. Never infer, reuse, or bypass approval from
 earlier wording such as "deploy it" or "handle it yourself".
 
-## Update Cadence Rule
+## Update Policy
 
-Do not refresh VibeGuard on every task. Run the audit first. If the audit says
-the local guardrails are stale, run
-`npx --yes @taehwandev/vibeguard@latest update .` once and rerun the audit.
-The default refresh interval is 7 days and can be tuned in `.vibeguard.json`.
+Do not refresh VibeGuard on a timer or as part of ordinary audit, edit, review,
+commit, or push work. Run `setup` or `update` only when the user explicitly
+requests that operation. Teams that want reminders must opt in with
+`update.mode: "scheduled"` and a positive `update.checkIntervalDays` value.
 
 ## Secret Rule
 

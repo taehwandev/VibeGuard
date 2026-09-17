@@ -192,7 +192,8 @@ mode is intentionally guided:
     "acknowledgedPaidDependencies": []
   },
   "update": {
-    "checkIntervalDays": 7
+    "mode": "explicit",
+    "checkIntervalDays": 0
   },
   "autoFix": {
     "envGitignore": true,
@@ -201,6 +202,11 @@ mode is intentionally guided:
   }
 }
 ```
+
+VibeGuard does not update itself during ordinary audits or development work.
+Run `setup` or `update` only as an explicit maintenance action. To opt into
+reminders, set `update.mode` to `"scheduled"` and choose a positive
+`update.checkIntervalDays` value.
 
 After reviewing an existing paid or quota-based package, add its exact package
 name to `cost.acknowledgedPaidDependencies`. An entry may be a bare name or an

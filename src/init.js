@@ -2,7 +2,12 @@ import path from "node:path";
 import { ensureEnvGitignore } from "./fix.js";
 import { appendUniqueLines, pathExists, readJsonIfExists, readTextIfExists, writeTextFile } from "./fs-utils.js";
 import { ensureGitHooks } from "./git-hooks.js";
-import { DEFAULT_UPDATE_CHECK_INTERVAL_DAYS, recordUpdateCheck, withDefaultUpdateSettings } from "./update-policy.js";
+import {
+  DEFAULT_UPDATE_CHECK_INTERVAL_DAYS,
+  DEFAULT_UPDATE_MODE,
+  recordUpdateCheck,
+  withDefaultUpdateSettings
+} from "./update-policy.js";
 
 const AGENT_RULE_START_PATTERN = /<!-- (?:vibeguard|vibe-guard):start(?: version=\d+)? -->/;
 const AGENT_RULE_END_PATTERN = /<!-- (?:vibeguard|vibe-guard):end -->/;
@@ -86,6 +91,7 @@ function defaultConfig(options) {
       acknowledgedPaidDependencies: []
     },
     update: {
+      mode: DEFAULT_UPDATE_MODE,
       checkIntervalDays: DEFAULT_UPDATE_CHECK_INTERVAL_DAYS
     },
     autoFix: {
@@ -146,12 +152,12 @@ is unknown, immediately before execution state the exact target and action and
 wait for fresh user confirmation. Never infer, reuse, or bypass approval from
 earlier wording such as "deploy it" or "handle it yourself".
 
-## Update Cadence Rule
+## Update Policy
 
-Do not refresh VibeGuard on every task. Run the audit first. If the audit says
-the local guardrails are stale, run
-\`npx --yes @taehwandev/vibeguard@latest update .\` once and rerun the audit.
-The default refresh interval is 7 days and can be tuned in \`.vibeguard.json\`.
+Do not refresh VibeGuard on a timer or as part of ordinary audit, edit, review,
+commit, or push work. Run \`setup\` or \`update\` only when the user explicitly
+requests that operation. Teams that want reminders must opt in with
+\`update.mode: "scheduled"\` and a positive \`update.checkIntervalDays\` value.
 
 ## Chat Secret Rule
 
@@ -216,7 +222,7 @@ For every task that may change code, configuration, dependencies, data,
 deployment, or credentials:
 
 1. Run \`vibeguard audit .\` before editing.
-2. If the audit reports stale VibeGuard guardrails, run \`npx --yes @taehwandev/vibeguard@latest update .\` once, then rerun \`vibeguard audit .\`. The default refresh interval is 7 days; do not update more often unless the user asks or the audit reports stale guardrails.
+2. Do not run VibeGuard \`setup\` or \`update\` during ordinary work. Run either operation only when the user explicitly requests that exact VibeGuard maintenance action.
 3. If \`vibeguard\` is unavailable, run \`npx --yes @taehwandev/vibeguard@latest audit .\` instead and use the same \`npx --yes @taehwandev/vibeguard@latest ...\` form for fixes.
 4. If fixable findings exist, run \`vibeguard audit . --fix\` before implementing.
 5. Never print detected secret values. Keep real secrets only in ignored runtime env files and keep env templates such as \`.env.example\` and \`.env.sample\` value-free.
@@ -232,6 +238,6 @@ deployment, or credentials:
 15. Keep VibeGuard scoped to guardrails. Do not clone, vendor, install, or link external playbooks or rule libraries unless the user explicitly asks for that separate setup.
 16. Preserve existing repo-local instructions. Only update the managed VibeGuard block between the \`vibeguard:start\` and \`vibeguard:end\` markers.
 
-Refresh this managed block only when \`vibeguard audit .\` reports stale guardrails, or manually with \`vibeguard update .\` / \`npx --yes @taehwandev/vibeguard@latest update .\`.
+Refresh this managed block only during an explicitly requested VibeGuard \`setup\` or \`update\` task.
 ${AGENT_RULE_END}`;
 }
