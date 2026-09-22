@@ -23,12 +23,7 @@ work for approval.
   worktrees.
 - Record optional execution evidence from supported agent hooks.
 - Keep server-only secrets from being moved into client code or public bundles.
-- Warn or block before destructive scripts, database work, production deploys,
-  credential changes, and paid API/model usage. Before every real external
-  production deployment, and any deployment whose target is unknown, require a
-  fresh user confirmation immediately before execution that states the exact
-  target and action; never infer, reuse, or bypass approval from earlier
-  wording such as "deploy it" or "handle it yourself".
+- Obtain explicit user authority before deleting data, running migrations, deploying to production, increasing paid API/model usage, adding recurring infrastructure, or changing credentials. Before execution, state the exact target and action and check that existing approval covers them. Continue within that approval through scoped corrections and retries; a source revision change alone does not revoke approval. Ask when the target or action is unresolved, scope or material risk changes, or the user pauses, limits, or revokes authority. Never infer approval from silence or extend it to unrelated actions, a new version, destructive operations, or an unapproved tag overwrite.
 - Block sensitive Git changes when repository visibility is public or unknown;
   warn on similar-but-not-exact remote names and public deployment or
   infrastructure changes.

@@ -84,12 +84,7 @@ approves the next risky step.
 - Keep env templates such as `.env.example` and `.env.sample` value-free.
 - Keep provider keys, database URLs, service-role keys, signing secrets, and
   webhook secrets server-side only.
-- Ask before deleting data, running migrations, deploying to production,
-  increasing paid API/model usage, or changing credentials. For every real
-  external production deployment, and any deployment whose target is unknown,
-  immediately before execution state the exact target and action and wait for
-  fresh user confirmation. Never infer, reuse, or bypass approval from earlier
-  wording such as "deploy it" or "handle it yourself".
+- Obtain explicit user authority before deleting data, running migrations, deploying to production, increasing paid API/model usage, adding recurring infrastructure, or changing credentials. Before execution, state the exact target and action and check that existing approval covers them. Continue within that approval through scoped corrections and retries; a source revision change alone does not revoke approval. Ask when the target or action is unresolved, scope or material risk changes, or the user pauses, limits, or revokes authority. Never infer approval from silence or extend it to unrelated actions, a new version, destructive operations, or an unapproved tag overwrite.
 - Confirm Git remote target, repository visibility, and changed files before
   commit or push. Treat public or unknown visibility as higher risk.
 - Use cost-aware architecture. Before adding a paid service, database, queue,
@@ -123,3 +118,5 @@ After applying VibeGuard, summarize only:
 - what tests or checks were run.
 
 Do not include raw secret values or long internal logs.
+
+Explicit setup/update also migrates the unchanged generated Deployment Confirmation Rule in existing VIBEGUARD.md files. Customized sections and surrounding policy stay unchanged. Audit-only commands never perform this migration.

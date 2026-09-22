@@ -37,7 +37,7 @@ test("init creates project policy and config", () => {
   assert.match(agentInstructions, /Preserve existing repo-local instructions/);
   assert.match(agentInstructions, /only when the user explicitly requests/);
   assert.doesNotMatch(agentInstructions, /default refresh interval is 7 days/);
-  assert.match(agentInstructions, /Before creating a commit, run `vibeguard audit \.`/);
+  assert.match(agentInstructions, /Before creating a commit, require a successful audit of the exact inputs/);
   assert.match(agentInstructions, /Keep secrets server-side/);
   assert.match(agentInstructions, /If the user pastes a secret in chat/);
   assert.match(agentInstructions, /Prefer cost-aware architecture/);
@@ -338,7 +338,7 @@ test("init updates only the managed VibeGuard agent instruction block", () => {
   assert.match(agentInstructions, /Keep this footer\./);
   assert.match(agentInstructions, /<!-- vibeguard:start version=1 -->/);
   assert.doesNotMatch(agentInstructions, /old instructions/);
-  assert.match(agentInstructions, /every real external production deployment, and any deployment whose target is unknown/);
-  assert.match(agentInstructions, /immediately before execution state the exact target and action and wait for fresh user confirmation/);
-  assert.match(agentInstructions, /Never infer, reuse, or bypass approval from earlier wording such as "deploy it" or "handle it yourself"/);
+  assert.match(agentInstructions, /check that existing approval covers them/);
+  assert.match(agentInstructions, /source revision change alone does not revoke approval/);
+  assert.doesNotMatch(agentInstructions, /wait for fresh user confirmation/);
 });

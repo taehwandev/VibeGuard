@@ -1,3 +1,4 @@
+import { approvalPolicy } from "./approval-policy.js";
 import path from "node:path";
 import { ensureEnvGitignore } from "./fix.js";
 import { appendUniqueLines, pathExists, readJsonIfExists, readTextIfExists, writeTextFile } from "./fs-utils.js";
@@ -34,6 +35,13 @@ export function initProject(projectRoot, options = {}) {
   if (!pathExists(policyPath)) {
     writeTextFile(policyPath, policyTemplate(options.rulesPath));
     applied.push("Created VIBEGUARD.md.");
+  } else {
+    const existing = readTextIfExists(policyPath);
+    const refreshed = approvalPolicy.refresh(existing);
+    if (refreshed !== existing) {
+      writeTextFile(policyPath, refreshed);
+      applied.push("Updated generated VIBEGUARD.md approval policy.");
+    }
   }
 
   const agentInstructionChange = ensureAgentInstructions(projectRoot);
@@ -147,10 +155,7 @@ credentials.
 
 ## Deployment Confirmation Rule
 
-For every real external production deployment, and any deployment whose target
-is unknown, immediately before execution state the exact target and action and
-wait for fresh user confirmation. Never infer, reuse, or bypass approval from
-earlier wording such as "deploy it" or "handle it yourself".
+${approvalPolicy.rule}
 
 ## Update Policy
 
@@ -221,17 +226,17 @@ function agentInstructionTemplate() {
 For every task that may change code, configuration, dependencies, data,
 deployment, or credentials:
 
-1. Run \`vibeguard audit .\` before editing. If a workflow runner's hooks already audited this task and reported the result, read that result instead of running the audit again.
+1. Run \`vibeguard audit .\` before editing. Reuse a successful workflow-hook audit only when it covers the same task, exact input bytes, rules, and audit mode. Missing, failed, skipped, changed, or uncertain evidence requires a fresh audit.
 2. Do not run VibeGuard \`setup\` or \`update\` during ordinary work. Run either operation only when the user explicitly requests that exact VibeGuard maintenance action.
 3. If \`vibeguard\` is unavailable, run \`npx --yes @taehwandev/vibeguard@latest audit .\` instead and use the same \`npx --yes @taehwandev/vibeguard@latest ...\` form for fixes.
 4. If fixable findings exist, run \`vibeguard audit . --fix\` before implementing.
 5. Never print detected secret values. Keep real secrets only in ignored runtime env files and keep env templates such as \`.env.example\` and \`.env.sample\` value-free.
-6. Ask before deleting data, running migrations, deploying to production, increasing paid API/model usage, adding recurring infrastructure, or changing credentials. For every real external production deployment, and any deployment whose target is unknown, immediately before execution state the exact target and action and wait for fresh user confirmation. Never infer, reuse, or bypass approval from earlier wording such as "deploy it" or "handle it yourself".
+6. ${approvalPolicy.rule}
 7. Prefer cost-aware architecture. Before adding a paid service, database, queue, background worker, model call, analytics SDK, or cloud resource, explain why existing code or a simpler local/server-side design is insufficient.
 8. For web apps, commonize repeated API/model/provider calls behind shared server-side helpers or endpoints. Prefer server-side caching, batching, and rate limits before adding new client-side call paths.
 9. Before commit or push, verify \`git remote -v\`, repository visibility, and changed files. If the repository is public or visibility is unknown, stop before pushing secrets, env files, credentials, deployment, infrastructure, or paid-service changes.
-10. After editing, run relevant tests and \`vibeguard audit .\` again before finishing, or read the result a workflow hook reported for the finished change. Run it yourself when no hook audited it, when a hook reported the audit as skipped, or when the code changed after that result.
-11. Before creating a commit, run \`vibeguard audit .\` unless a hook already audited the exact bytes being committed; before pushing or publishing, run \`vibeguard audit . --strict\`.
+10. After editing, run relevant tests and require a successful audit of the finished change. Reuse a matching workflow-hook result under rule 1; otherwise run the audit.
+11. Before creating a commit, require a successful audit of the exact inputs being committed. Before pushing or publishing, require \`vibeguard audit . --strict\` for the exact inputs being published. A workflow, pre-commit, pre-push, or publish hook may supply the matching result under rule 1. Never reuse failed, skipped, uncertain, stale, or non-strict evidence for a strict requirement.
 12. If execution evidence is available, run \`vibeguard evidence .\` before the final response and do not claim tests or audits ran unless they were observed.
 13. Keep secrets server-side. Do not expose provider keys, database URLs, signing secrets, service-role keys, or webhook secrets to client code.
 14. If the user pastes a secret in chat, treat it as exposed. Do not repeat it, put it in commands/logs/files/GitHub secrets/deployment settings/servers, or continue with deployment using that value. Guide the user to rotate it and enter a new value only through a local provider UI or secret-store prompt.

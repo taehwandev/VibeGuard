@@ -21,10 +21,7 @@ money, deploy externally, or requires private credentials.
 
 ## Deployment Confirmation Rule
 
-For every real external production deployment, and any deployment whose target
-is unknown, immediately before execution state the exact target and action and
-wait for fresh user confirmation. Never infer, reuse, or bypass approval from
-earlier wording such as "deploy it" or "handle it yourself".
+Obtain explicit user authority before deleting data, running migrations, deploying to production, increasing paid API/model usage, adding recurring infrastructure, or changing credentials. Before execution, state the exact target and action and check that existing approval covers them. Continue within that approval through scoped corrections and retries; a source revision change alone does not revoke approval. Ask when the target or action is unresolved, scope or material risk changes, or the user pauses, limits, or revokes authority. Never infer approval from silence or extend it to unrelated actions, a new version, destructive operations, or an unapproved tag overwrite.
 
 ## Update Policy
 
