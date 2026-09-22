@@ -115,8 +115,8 @@ Use a forward fix instead:
 5. If consumers must avoid the bad package, deprecate that exact npm version
    through an approved maintainer action with a short replacement message.
 
-If `node src/cli.js audit . --strict` reports stale guardrails, run the approved
-VibeGuard update flow first, then rerun the strict audit. If it reports a
+Elapsed time alone is not a reason to refresh guardrails before release.
+Strict audits still enforce actual safety findings. If an audit reports a
 structural warning, either fix the structure before release or record the
 accepted release risk before tagging.
 
