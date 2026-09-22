@@ -44,9 +44,10 @@ user's way."
   VibeGuard managed block, config defaults, hooks, and local update-check state.
 - Agents should prefer the published npm package form:
   `npx --yes @taehwandev/vibeguard@latest ...`.
-- The default update TTL is 7 days. `vibeguard audit .` should warn when the
-  local update-check state is stale, and the agent should run
-  `npx --yes @taehwandev/vibeguard@latest update .` once before continuing.
+- Updates are explicit maintenance for relevant policy or compatibility changes.
+  Elapsed time alone must not produce an audit finding or require a refresh.
+  Audits do not poll package registries; legacy scheduling settings do not
+  request updates or block work.
 - Commit and push hooks should not run `update .` themselves because hooks
   should not mutate tracked files during commit or push.
 - The GitHub repository link remains the human-friendly instruction anchor, but

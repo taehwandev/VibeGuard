@@ -1,5 +1,4 @@
-// The update-check reminder and what a strict audit does with it.
-// Split out of audit-fix.test.js for the same reason.
+// Audit safety must not depend on how recently guardrails were refreshed.
 
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -10,36 +9,32 @@ import { initProject } from "../src/init.js";
 import { projects } from "./project-fixtures.js";
 import { runCli } from "./cli-runner.js";
 
-test("an explicitly scheduled stale update check is reported without failing a strict audit", () => {
-  // VibeGuard installs `audit . --strict` into pre-push itself, and strict
-  // fails on any warning. Grading this reminder as one blocked every push in a
-  // repository whose guardrails had aged past the interval -- for a reason
-  // unrelated to what was being pushed, with bypassing the hook as the way out.
-  const root = projects.temp();
-  initProject(root);
-  const configPath = path.join(root, ".vibeguard.json");
-  const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
-  config.update = { mode: "scheduled", checkIntervalDays: 30 };
-  fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
-  fs.writeFileSync(
-    path.join(root, ".vibeguard", "update-state.json"),
-    `${JSON.stringify({ lastCheckedAt: "2000-01-01T00:00:00.000Z" }, null, 2)}\n`,
-    "utf8"
-  );
+for (const state of [null, "invalid JSON", JSON.stringify({lastCheckedAt: "2000-01-01T00:00:00.000Z"})]) {
+  test(`scheduled age alone never requests an update: ${state}`, () => {
+    const root = projects.temp();
+    initProject(root);
+    const configPath = path.join(root, ".vibeguard.json");
+    const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    config.update = { mode: "scheduled", checkIntervalDays: 7 };
+    fs.writeFileSync(configPath, JSON.stringify(config));
+    const statePath = path.join(root, ".vibeguard", "update-state.json");
+    if (state === null) fs.rmSync(statePath);
+    else fs.writeFileSync(statePath, state);
+    const before = fs.readFileSync(configPath, "utf8");
 
-  const report = auditProject(root);
-  const finding = report.findings.find((item) => item.action === "update-vibeguard");
-  assert.equal(finding?.severity, "info");
-  assert.match(finding.message, /30-day interval/);
-  assert.equal(report.summary.warnings, 0);
-  assert.equal(report.summary.blocks, 0);
-
-  const strictRun = runCli(["audit", root, "--json", "--strict"]);
-  assert.equal(strictRun.status, 0, strictRun.stderr || strictRun.stdout);
-});
+    const report = auditProject(root);
+    assert.equal(report.findings.some(item => item.action === "update-vibeguard"), false);
+    const strictRun = runCli(["audit", root, "--json", "--strict"]);
+    assert.equal(strictRun.status, 0, strictRun.stderr || strictRun.stdout);
+    assert.equal(JSON.parse(strictRun.stdout).findings.some(item => item.action === "update-vibeguard"), false);
+    assert.equal(fs.readFileSync(configPath, "utf8"), before);
+    assert.equal(fs.existsSync(statePath), state !== null);
+    if (state !== null) assert.equal(fs.readFileSync(statePath, "utf8"), state);
+  });
+}
 
 test("a real warning still fails a strict audit", () => {
-  // The reminder stopped blocking; the safety gates must not have followed it.
+  // Removing age-based notices must preserve actual safety enforcement.
   const root = projects.temp();
   initProject(root);
   // Assembled rather than written out: a literal of this shape in a committed

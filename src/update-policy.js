@@ -1,12 +1,9 @@
 import path from "node:path";
-import { readJsonIfExists, writeTextFile } from "./fs-utils.js";
-import { t } from "./i18n.js";
+import { writeTextFile } from "./fs-utils.js";
 
 export const DEFAULT_UPDATE_MODE = "explicit";
 export const DEFAULT_UPDATE_CHECK_INTERVAL_DAYS = 0;
 export const UPDATE_STATE_FILE = path.join(".vibeguard", "update-state.json");
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function normalizeUpdateSettings(config = {}) {
   const raw = isPlainObject(config.update) ? config.update : {};
@@ -41,82 +38,6 @@ export function recordUpdateCheck(projectRoot, now = new Date()) {
       2
     )}\n`
   );
-}
-
-export function updateCheckStatus(projectRoot, config = {}, now = new Date()) {
-  const settings = normalizeUpdateSettings(config);
-  if (settings.checkIntervalDays <= 0) {
-    return {
-      due: false,
-      disabled: true,
-      checkIntervalDays: settings.checkIntervalDays,
-      ageDays: null
-    };
-  }
-
-  const state = readUpdateState(projectRoot);
-  const checkedAt = typeof state.lastCheckedAt === "string" ? Date.parse(state.lastCheckedAt) : NaN;
-  if (!Number.isFinite(checkedAt)) {
-    return {
-      due: true,
-      disabled: false,
-      reason: "missing-state",
-      checkIntervalDays: settings.checkIntervalDays,
-      ageDays: "unknown"
-    };
-  }
-
-  const ageMs = Math.max(0, now.getTime() - checkedAt);
-  const ageDays = Math.floor(ageMs / DAY_MS);
-  return {
-    due: ageMs >= settings.checkIntervalDays * DAY_MS,
-    disabled: false,
-    reason: "stale-state",
-    checkIntervalDays: settings.checkIntervalDays,
-    ageDays
-  };
-}
-
-export function staleUpdateFinding(projectRoot, config = {}, options = {}) {
-  if (!options.hasConfig) return null;
-
-  const status = updateCheckStatus(projectRoot, config, options.now ?? new Date());
-  if (!status.due) return null;
-
-  return {
-    // Informational, whichever way the state is stale.
-    //
-    // This finding says the guardrails have not been refreshed lately. It says
-    // nothing about the change being audited, and `--strict` fails on any
-    // warning -- which VibeGuard installs into `pre-push` itself. A warning
-    // here therefore blocked every push in a repository whose guardrails had
-    // aged past the interval, for a reason unrelated to what was being pushed,
-    // and the way out was to bypass the hook.
-    //
-    // The two cases were also graded backwards: never having refreshed was
-    // informational, while refreshing eight days ago was a warning, though the
-    // first is strictly less fresh than the second.
-    //
-    // The safety gates are untouched. A secret, a data-loss pattern, a cost
-    // signal or a structural blocker still warns or blocks, and still stops a
-    // strict audit.
-    severity: "info",
-    category: "environment",
-    action: "update-vibeguard",
-    message: t(options.language, "finding.staleUpdate.message", {
-      intervalDays: status.checkIntervalDays,
-      ageDays: status.ageDays
-    }),
-    recommendation: t(options.language, "finding.staleUpdate.recommendation")
-  };
-}
-
-function readUpdateState(projectRoot) {
-  try {
-    return readJsonIfExists(path.join(projectRoot, UPDATE_STATE_FILE)) ?? {};
-  } catch {
-    return {};
-  }
 }
 
 function isPlainObject(value) {

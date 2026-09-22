@@ -204,9 +204,10 @@ mode is intentionally guided:
 ```
 
 VibeGuard does not update itself during ordinary audits or development work.
-Run `setup` or `update` only as an explicit maintenance action. To opt into
-reminders, set `update.mode` to `"scheduled"` and choose a positive
-`update.checkIntervalDays` value.
+Run `setup` or `update` only as an explicit maintenance action for a relevant
+policy or compatibility change. Elapsed time alone is not an update reason.
+Audits do not query package registries or request updates based on age, even
+with legacy scheduled settings. Those settings remain readable for compatibility.
 
 After reviewing an existing paid or quota-based package, add its exact package
 name to `cost.acknowledgedPaidDependencies`. An entry may be a bare name or an

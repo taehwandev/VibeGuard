@@ -32,15 +32,11 @@ This keeps link-only setup usable for non-developers while still refreshing from
 the public package source.
 
 Hooks do not run `vibeguard update .` automatically because commit and push
-hooks should not mutate tracked project files. VibeGuard instead stores local
-update-check state under `.vibeguard/` and uses a 7-day default TTL. When
-`vibeguard audit .` reports stale guardrails, run:
-
-```bash
-npx --yes @taehwandev/vibeguard@latest update .
-```
-
-Then rerun the audit before continuing.
+hooks should not mutate tracked project files. Elapsed time does not prove
+that a newer or relevant policy exists. Audits therefore do not issue
+age-based update findings, including for legacy scheduled configurations.
+Use explicit maintenance when a relevant policy or compatibility change is
+known; ordinary safety checks continue without a refresh.
 
 ## Repository Target And Visibility
 

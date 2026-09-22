@@ -27,8 +27,9 @@ Obtain explicit user authority before deleting data, running migrations, deployi
 
 Do not refresh VibeGuard on a timer or as part of ordinary audit, edit, review,
 commit, or push work. Run `setup` or `update` only when the user explicitly
-requests that operation. Teams that want reminders must opt in with
-`update.mode: "scheduled"` and a positive `update.checkIntervalDays` value.
+requests that operation for a relevant policy or compatibility change. Elapsed
+time alone is not a reason to update. Audits do not check registry versions or
+request updates based on age; legacy scheduling settings are inert in audits.
 
 ## Secret Rule
 

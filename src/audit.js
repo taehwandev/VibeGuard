@@ -23,7 +23,6 @@ import { checkGitSafety } from "./git-safety.js";
 import { normalizeLanguage, t } from "./i18n.js";
 import { loadRuleLibrary } from "./rules.js";
 import { containsCredentialUrlSecret, findCredentialUrlSecretMatches } from "./secret-url.js";
-import { staleUpdateFinding } from "./update-policy.js";
 
 const KNOWN_SECRET_PATTERNS = [
   { label: "OpenAI API key", regex: /\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}\b/g },
@@ -55,7 +54,6 @@ export function auditProject(projectPath, options = {}) {
   if (!pathExists(root)) throw new Error(`Project path does not exist: ${root}`);
 
   const configPath = path.join(root, ".vibeguard.json");
-  const hasConfig = pathExists(configPath);
   const config = readJsonIfExists(configPath) ?? {};
   const language = normalizeLanguage(options.language ?? options.lang ?? config.language);
   const rulesPath = options.rulesPath ?? config.rulesPath;
@@ -87,8 +85,6 @@ export function auditProject(projectPath, options = {}) {
 
   const pathspecs = normalizePathspecs(options.paths ?? options.pathspecs ?? []);
   checkProjectBasics(root, report);
-  const staleUpdate = staleUpdateFinding(root, config, { hasConfig, language, now: options.now });
-  if (staleUpdate) addFinding(report, staleUpdate);
   checkGitSafety(root, report, config, addFinding, {
     env: options.env ?? process.env,
     pathspecs
