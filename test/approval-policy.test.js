@@ -72,6 +72,19 @@ test("generated policies and English prompt share authority boundaries", () => {
   assert.match(agents, /non-strict evidence for a strict requirement/);
 });
 
+test("generated agent rules reuse same-task push checks and evidence", () => {
+  const root = projects.temp();
+  initProject(root);
+  const agents = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");
+  assert.match(agents, /Before the first commit or push of a task, verify `git remote -v`/);
+  assert.match(agents, /reuse the remote and visibility result while both are unchanged/);
+  assert.match(agents, /check the changed files again for each new commit/);
+  assert.match(agents, /no hook or earlier step in the same run already reported it/);
+  assert.doesNotMatch(agents, /12\. If execution evidence is available, run `vibeguard evidence \.`/);
+  assert.match(t("en", "prompt.rule11"), /reuse the remote and visibility result/);
+  assert.match(t("ko", "prompt.rule11"), /결과를 재사용/);
+});
+
 test("Korean prompt preserves approval and continuation boundaries", () => {
   const korean = t("ko", "prompt.rule4");
   for (const term of ["기존 승인", "수정과 재시도", "리비전", "위험", "철회", "침묵", "새 버전", "태그 덮어쓰기"]) {

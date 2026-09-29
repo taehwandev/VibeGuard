@@ -36,8 +36,10 @@ Rules:
   exact target and action and wait for fresh user confirmation. Never infer,
   reuse, or bypass approval from earlier wording such as "deploy it" or
   "handle it yourself".
-- Before commit or push, verify `git remote -v`, repository visibility, and
-  changed files. Public or unknown-visibility repositories require extra review
+- Before the first commit or push of a task, verify `git remote -v`, repository
+  visibility, and changed files; later commits and pushes in the same task
+  reuse the remote and visibility result while both are unchanged, and check
+  changed files again per commit. Public or unknown-visibility repositories require extra review
   before pushing credentials, env files, deployment, infrastructure, or
   paid-service changes.
 - Prefer cost-aware architecture. Before adding a paid service, database,
