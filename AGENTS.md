@@ -19,16 +19,19 @@ ${TAO_HOME}/scripts/project-discover.py
 Use repo-local instructions first. If this block is being installed into a
 personal or global runtime instructions file, and the runtime starts outside the
 target repo or the request does not name one clear repo, run
-`agent-entry.py` or `project-discover.py` first and stop when it returns
-`ambiguous` or `not_found`. If `agent-entry.py` returns `selected`, prefer
+`agent-entry.py` or `project-discover.py` first. Ask for a target if it remains
+ambiguous or unidentified. An explicitly named path for a new project may be
+created and edited when discovery says `not_found`; no existing repo or
+instruction file exists to select yet. Read its instructions once present and
+apply its Git/worktree policy after initialization. If `agent-entry.py`
+returns `selected`, prefer
 starting or relaunching the runtime with that selected repo as the primary
 workspace. For Codex, use `codex -C <TARGET_REPO>`; add
 `--add-dir ${TAO_HOME}` only when the task needs the shared
 Tao Agent OS root in the session workspace. Repo instruction files define
-behavior; runtime launch options define filesystem scope. Explicitly read the
-current target project's
-instruction file for this runtime before using Tao Agent OS: Codex-style
-agents read `AGENTS.md`, Claude reads `CLAUDE.md` when
+behavior; runtime launch options define filesystem scope. Before work in a
+target project, explicitly read its instruction file when present for this
+runtime: Codex-style agents read `AGENTS.md`, Claude reads `CLAUDE.md` when
 present, Codex-specific setups read `CODEX.md` when present,
 Gemini/Antigravity/AGY reads `AGENTS.md`, and generic agents read their
 configured project instruction document or `.agents/README.md` when used.
@@ -53,9 +56,12 @@ they contain product-specific facts, commands, domain policy, or verification
 that cannot be shared safely.
 
 VibeGuard is required before documentation, code, config, dependency, data,
-deployment, or credential changes. Apply the current VibeGuard package command
-flow with ${TAO_HOME} as the rule source before editing and again
-before finishing. The VibeGuard site is a human reference and does not need to
+deployment, or credential changes. In a tracked lifecycle the start and review
+hooks run it with ${TAO_HOME} as the rule source and report `VibeGuard overall`;
+read that line instead of repeating the audit, and run the package command
+yourself only when a hook reports `Skipped`, when no tracked lifecycle is in
+use, or as `--strict` before push or publish.
+The VibeGuard site is a human reference and does not need to
 be fetched by the agent. Do not run VibeGuard `setup` or `update` blindly. If
 this repo already has custom agent instructions,
 `.vibeguard.json`, `VIBEGUARD.md`, or a managed VibeGuard block, ask a short
